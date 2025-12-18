@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
 import './App.css';
 
 // Context for global state
@@ -169,7 +169,7 @@ const stats = [
 ];
 
 // Animated counter component
-const Counter = ({ end, duration = 2, prefix = '', suffix = '' }) => {
+const Counter = ({ end, duration = 2, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -468,7 +468,7 @@ const WhySalient = () => {
 
 // Course Card Component
 const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMore: (course: any) => void; onEnquiry: (course: any) => void }) => {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     'Enrolling Now': 'bg-green-100 text-green-800',
     'Launching Soon': 'bg-blue-100 text-blue-800',
     'Under Development': 'bg-yellow-100 text-yellow-800',
@@ -491,7 +491,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMo
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status]}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status as string] || ''}`}>
             {course.status}
           </span>
         </div>
@@ -537,7 +537,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMo
 };
 
 // Course Detail Modal
-const CourseDetailModal = ({ course, onClose }) => {
+const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => void }) => {
   if (!course) return null;
 
   return (
@@ -673,7 +673,7 @@ const CourseDetailModal = ({ course, onClose }) => {
 };
 
 // Enquiry Modal
-const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
+const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: boolean; onClose: () => void; selectedCourse?: any }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -1097,7 +1097,7 @@ const AboutPage = () => {
 
 // FAQs Page
 const FAQsPage = () => {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState<string | null>(null);
 
   const faqs = [
     {
