@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
 import './App.css';
 // Context for global state
 interface AppContextType {
@@ -168,14 +168,14 @@ const mockCourses = [
 
 // Stats from brochure
 const stats = [
-  { value: 30, suffix: '%+', label: 'YoY Growth in AI & Data Roles' },
-  { value: 11, suffix: 'M+', label: 'New AI & Data Jobs Globally' },
-  { value: 1, suffix: 'T', label: 'AI Market by 2030' },
-  { value: 40, suffix: '%', label: 'Higher Salaries for Certified Professionals' }
+  { value: 30, prefix: '', suffix: '%+', label: 'YoY Growth in AI & Data Roles' },
+  { value: 11, prefix: '', suffix: 'M+', label: 'New AI & Data Jobs Globally' },
+  { value: 1, prefix: '', suffix: 'T', label: 'AI Market by 2030' },
+  { value: 40, prefix: '', suffix: '%', label: 'Higher Salaries for Certified Professionals' }
 ];
 
 // Animated counter component
-const Counter = ({ end, duration = 2, prefix = '', suffix = '' }) => {
+const Counter = ({ end, duration = 2, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -259,7 +259,7 @@ const Header = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={openEnquiry}
+              onClick={() => openEnquiry()}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Speak to an Advisor
@@ -378,7 +378,7 @@ const Hero = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={openEnquiry}
+              onClick={() => openEnquiry()}
               className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
             >
               Speak to an Advisor
@@ -483,8 +483,8 @@ const WhySalient = () => {
 };
 
 // Course Card Component
-const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
-  const statusColors = {
+const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: typeof mockCourses[0]; onLearnMore: (course: typeof mockCourses[0]) => void; onEnquiry: (course: typeof mockCourses[0]) => void }) => {
+  const statusColors: Record<string, string> = {
     'Enrolling Now': 'bg-green-100 text-green-800',
     'Launching Soon': 'bg-blue-100 text-blue-800',
     'Under Development': 'bg-yellow-100 text-yellow-800',
@@ -507,7 +507,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status]}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status] || 'bg-gray-100 text-gray-800'}`}>
             {course.status}
           </span>
         </div>
@@ -553,7 +553,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
 };
 
 // Course Detail Modal
-const CourseDetailModal = ({ course, onClose }) => {
+const CourseDetailModal = ({ course, onClose }: { course: typeof mockCourses[0] | null; onClose: () => void }) => {
   if (!course) return null;
 
   return (
@@ -908,7 +908,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
 // Courses Page
 const CoursesPage = () => {
   const { openEnquiry, setSelectedCourse, courses } = useApp();
-  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState<typeof mockCourses[0] | null>(null);
   const [filters, setFilters] = useState({
     level: 'All',
     category: 'All',
@@ -926,11 +926,11 @@ const CoursesPage = () => {
     return true;
   });
 
-  const handleLearnMore = (course) => {
+  const handleLearnMore = (course: typeof mockCourses[0]) => {
     setSelectedCourseDetail(course);
   };
 
-  const handleEnquiry = (course) => {
+  const handleEnquiry = (course: { id: number; slug: string; title: string; category: string; level: string; duration: string; priceText: string; status: string; shortDescription: string; fullDescription: string; curriculum: { title: string; topics: string[]; }[]; projects: string[]; tools: string[]; outcomes: string[]; image: string; } | null) => {
     setSelectedCourse(course);
     openEnquiry();
   };
@@ -1133,7 +1133,7 @@ const AboutPage = () => {
 
 // FAQs Page
 const FAQsPage = () => {
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState<string | null>(null);
 
   const faqs = [
     {
@@ -1376,7 +1376,7 @@ const ContactPage = () => {
                 Need immediate assistance? Click below to open our enquiry form.
               </p>
               <button
-                onClick={openEnquiry}
+                onClick={() => openEnquiry()}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full"
               >
                 Open Enquiry Form
@@ -1938,11 +1938,11 @@ export default App;
 // ==================== ADMIN COMPONENTS START ====================
 
 // Admin Login Component
-const AdminLogin = ({ onLogin }) => {
+const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     if (pin === ADMIN_PIN) {
       onLogin();
@@ -2009,9 +2009,11 @@ const AdminLogin = ({ onLogin }) => {
 };
 
 // Course Form Component (for Add/Edit)
-const CourseForm = ({ course, onSave, onCancel }) => {
+const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0] | null; onSave: (course: typeof mockCourses[0]) => void; onCancel: () => void }) => {
   const [formData, setFormData] = useState(
     course || {
+      id: 0,
+      slug: '',
       title: '',
       category: 'Data Science & AI',
       level: 'Beginner',
@@ -2032,9 +2034,14 @@ const CourseForm = ({ course, onSave, onCancel }) => {
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
   const statuses = ['Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
-    onSave(formData);
+    const dataToSave = {
+      ...formData,
+      id: formData.id || Date.now(),
+      slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    };
+    onSave(dataToSave);
   };
 
   const addCurriculumModule = () => {
@@ -2044,47 +2051,50 @@ const CourseForm = ({ course, onSave, onCancel }) => {
     });
   };
 
-  const removeCurriculumModule = (index) => {
+  const removeCurriculumModule = (index: number) => {
     const newCurriculum = formData.curriculum.filter((_, i) => i !== index);
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const updateCurriculumModule = (index, field, value) => {
+  const updateCurriculumModule = (index: number, field: string, value: string) => {
     const newCurriculum = [...formData.curriculum];
-    newCurriculum[index][field] = value;
+  (newCurriculum[index] as any)[field] = value;
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const addTopic = (moduleIndex) => {
+  const addTopic = (moduleIndex: number) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics.push('');
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const updateTopic = (moduleIndex, topicIndex, value) => {
+  const updateTopic = (moduleIndex: number, topicIndex: number, value: string) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics[topicIndex] = value;
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const removeTopic = (moduleIndex, topicIndex) => {
+  const removeTopic = (moduleIndex: number, topicIndex: number) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics = newCurriculum[moduleIndex].topics.filter((_, i) => i !== topicIndex);
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const addArrayItem = (field) => {
-    setFormData({ ...formData, [field]: [...formData[field], ''] });
+  const addArrayItem = (field: 'projects' | 'tools' | 'outcomes') => {
+    const currentArray = formData[field];
+    setFormData({ ...formData, [field]: [...currentArray, ''] });
   };
 
-  const updateArrayItem = (field, index, value) => {
-    const newArray = [...formData[field]];
+  const updateArrayItem = (field: 'projects' | 'tools' | 'outcomes', index: number, value: string) => {
+    const currentArray = formData[field];
+    const newArray = [...currentArray];
     newArray[index] = value;
     setFormData({ ...formData, [field]: newArray });
   };
 
-  const removeArrayItem = (field, index) => {
-    const newArray = formData[field].filter((_, i) => i !== index);
+  const removeArrayItem = (field: 'projects' | 'tools' | 'outcomes', index: number) => {
+    const currentArray = formData[field];
+    const newArray = currentArray.filter((_: any, i: any) => i !== index);
     setFormData({ ...formData, [field]: newArray });
   };
 
@@ -2413,13 +2423,12 @@ const CourseForm = ({ course, onSave, onCancel }) => {
 };
 
 // Admin Dashboard Component
-const AdminDashboard = ({ onLogout }) => {
-  const { courses, addCourse, updateCourse, deleteCourse } = useApp();
+const AdminDashboard = ({ onLogout, addCourse, updateCourse, deleteCourse, courses }: { onLogout: () => void; addCourse: (course: any) => void; updateCourse: (updatedCourse: any) => void; deleteCourse: (courseId: any) => void; courses: typeof mockCourses }) => {
   const [showForm, setShowForm] = useState(false);
-  const [editingCourse, setEditingCourse] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editingCourse, setEditingCourse] = useState<typeof mockCourses[0] | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<typeof mockCourses[0] | null>(null);
 
-  const handleSaveCourse = (courseData) => {
+  const handleSaveCourse = (courseData: { title: any; id?: number; slug?: string; category?: string; level?: string; duration?: string; priceText?: string; status?: string; shortDescription?: string; fullDescription?: string; curriculum?: { title: string; topics: string[]; }[]; projects?: string[]; tools?: string[]; outcomes?: string[]; image?: string; }) => {
     if (editingCourse) {
       updateCourse({ ...courseData, id: editingCourse.id, slug: editingCourse.slug });
     } else {
@@ -2434,12 +2443,12 @@ const AdminDashboard = ({ onLogout }) => {
     setEditingCourse(null);
   };
 
-  const handleEdit = (course) => {
-    setEditingCourse(course);
+  const handleEdit = (courseId: number) => {
+    setEditingCourse(courseId ? courses.find(c => c.id === courseId) || null : null);
     setShowForm(true);
   };
 
-  const handleDelete = (courseId) => {
+  const handleDelete = (courseId: number) => {
     deleteCourse(courseId);
     setDeleteConfirm(null);
   };
@@ -2590,7 +2599,7 @@ const AdminDashboard = ({ onLogout }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleEdit(course)}
+                          onClick={() => handleEdit(course as any)}
                           className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Edit
