@@ -1,17 +1,20 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter, Search } from 'lucide-react';
 import './App.css';
-
 // Context for global state
 interface AppContextType {
   currentPage: string;
   setCurrentPage: (page: string) => void;
   enquiryOpen: boolean;
-  openEnquiry: (course?: any) => void;
+  openEnquiry: (course?: typeof mockCourses[0]) => void;
   closeEnquiry: () => void;
-  selectedCourse: any;
-  setSelectedCourse: (course: any) => void;
+  selectedCourse: typeof mockCourses[0] | null;
+  setSelectedCourse: (course: typeof mockCourses[0] | null) => void;
+  courses: typeof mockCourses;
+  addCourse: (course: typeof mockCourses[0]) => void;
+  updateCourse: (course: typeof mockCourses[0]) => void;
+  deleteCourse: (courseId: number) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -21,6 +24,9 @@ const useApp = () => {
   if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };
+
+// ADMIN PIN - Change this to your desired PIN
+const ADMIN_PIN = 'Salient@123';
 
 // Mock course data from brochure
 const mockCourses = [
@@ -164,12 +170,12 @@ const mockCourses = [
 const stats = [
   { value: 30, suffix: '%+', label: 'YoY Growth in AI & Data Roles' },
   { value: 11, suffix: 'M+', label: 'New AI & Data Jobs Globally' },
-  { value: 1, suffix: 'T', prefix: '$', label: 'AI Market by 2030' },
+  { value: 1, suffix: 'T', label: 'AI Market by 2030' },
   { value: 40, suffix: '%', label: 'Higher Salaries for Certified Professionals' }
 ];
 
 // Animated counter component
-const Counter = ({ end, duration = 2, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) => {
+const Counter = ({ end, duration = 2, prefix = '', suffix = '' }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -207,7 +213,8 @@ const Header = () => {
     { label: 'Courses', page: 'courses' },
     { label: 'About', page: 'about' },
     { label: 'FAQs', page: 'faqs' },
-    { label: 'Contact', page: 'contact' }
+    { label: 'Contact', page: 'contact' },
+    
   ];
 
   return (
@@ -226,7 +233,12 @@ const Header = () => {
             whileHover={{ scale: 1.05 }}
             onClick={() => setCurrentPage('home')}
           >
-            Salient Learnings
+            <img
+              className="w-28 h-24 object-contain mr-2 inline-block"
+              src='./logo.png'
+              alt='Salient Learnings Logo'
+            />
+           
           </motion.div>
 
           {/* Desktop Nav */}
@@ -318,14 +330,18 @@ const Hero = () => {
           transition={{ duration: 0.8 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <motion.h1
-            className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-          >
-            Salient Learnings
-          </motion.h1>
+       <motion.h1
+  className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 
+             bg-linear-to-r from-blue-900 via-purple-900 to-pink-900 
+             bg-clip-text text-transparent
+             leading-[1.15] pb-2"
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.2, duration: 0.8 }}
+>
+  Salient Learnings
+</motion.h1>
+
           
           <motion.p
             className="text-xl md:text-2xl text-gray-700 mb-4 font-medium"
@@ -467,8 +483,8 @@ const WhySalient = () => {
 };
 
 // Course Card Component
-const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMore: (course: any) => void; onEnquiry: (course: any) => void }) => {
-  const statusColors: Record<string, string> = {
+const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
+  const statusColors = {
     'Enrolling Now': 'bg-green-100 text-green-800',
     'Launching Soon': 'bg-blue-100 text-blue-800',
     'Under Development': 'bg-yellow-100 text-yellow-800',
@@ -491,7 +507,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMo
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status as string] || ''}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status]}`}>
             {course.status}
           </span>
         </div>
@@ -537,7 +553,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: any; onLearnMo
 };
 
 // Course Detail Modal
-const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => void }) => {
+const CourseDetailModal = ({ course, onClose }) => {
   if (!course) return null;
 
   return (
@@ -595,11 +611,11 @@ const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => vo
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-4 text-gray-900">Curriculum</h3>
             <div className="space-y-4">
-              {course.curriculum.map((module: { title: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; topics: any[]; }, index: React.Key | null | undefined) => (
+              {course.curriculum.map((module, index) => (
                 <div key={index} className="border-l-4 border-blue-600 pl-4">
                   <h4 className="font-semibold text-gray-900 mb-2">{module.title}</h4>
                   <ul className="space-y-1">
-                    {module.topics.map((topic: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, idx: React.Key | null | undefined) => (
+                    {module.topics.map((topic, idx) => (
                       <li key={idx} className="text-gray-600 flex items-start">
                         <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-1" />
                         {topic}
@@ -614,7 +630,7 @@ const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => vo
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-3 text-gray-900">Projects & Capstone</h3>
             <ul className="space-y-2">
-              {course.projects.map((project: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
+              {course.projects.map((project, index) => (
                 <li key={index} className="flex items-start text-gray-600">
                   <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                   {project}
@@ -626,7 +642,7 @@ const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => vo
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-3 text-gray-900">Tools & Technologies</h3>
             <div className="flex flex-wrap gap-2">
-              {course.tools.map((tool: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
+              {course.tools.map((tool, index) => (
                 <span
                   key={index}
                   className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
@@ -640,7 +656,7 @@ const CourseDetailModal = ({ course, onClose }: { course: any; onClose: () => vo
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-3 text-gray-900">Career Outcomes</h3>
             <ul className="space-y-2">
-              {course.outcomes.map((outcome: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
+              {course.outcomes.map((outcome, index) => (
                 <li key={index} className="flex items-start text-gray-600">
                   <Award className="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" />
                   {outcome}
@@ -680,7 +696,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
     phone: '',
     program: selectedCourse?.title || '',
     message: '',
-    contactMethod: 'email'
+    contactMethod: 'email',
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -713,6 +729,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
   };
 
   if (!isOpen) return null;
+
+   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   return (
     <motion.div
@@ -752,16 +772,20 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
             <p className="text-gray-600">We'll get back to you soon.</p>
           </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action="https://formspree.io/f/xanogwrj"
+                   method="POST"
+                    className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name *
               </label>
               <input
                 type="text"
+                id="name"
+                name="name"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 placeholder="Your name"
               />
@@ -773,9 +797,11 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
               </label>
               <input
                 type="email"
+                id="email"
+                name="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 placeholder="your@email.com"
               />
@@ -787,9 +813,11 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
               </label>
               <input
                 type="tel"
+                id="phone"
+                      name="phone"
                 required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 placeholder="+91-XXXXXXXXXX"
               />
@@ -801,8 +829,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
               </label>
               <input
                 type="text"
+                id="program"
+                    name="program"
                 value={formData.program}
-                onChange={(e) => setFormData({ ...formData, program: e.target.value })}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 placeholder="Select a program"
               />
@@ -817,8 +847,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
                   <input
                     type="radio"
                     value="email"
+                     id="contactMethod"
+                      name="contactMethod"
                     checked={formData.contactMethod === 'email'}
-                    onChange={(e) => setFormData({ ...formData, contactMethod: e.target.value })}
+                    onChange={handleChange}
                     className="mr-2"
                   />
                   Email
@@ -827,8 +859,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
                   <input
                     type="radio"
                     value="phone"
+                    id="contactMethod"
+                      name="contactMethod"
                     checked={formData.contactMethod === 'phone'}
-                    onChange={(e) => setFormData({ ...formData, contactMethod: e.target.value })}
+                    onChange={handleChange}
                     className="mr-2"
                   />
                   Phone
@@ -841,8 +875,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
                 Message
               </label>
               <textarea
+              id="message"
+                    name="message"
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                onChange={handleChange}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
                 placeholder="Tell us about your goals..."
@@ -871,7 +907,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
 
 // Courses Page
 const CoursesPage = () => {
-  const { openEnquiry, setSelectedCourse } = useApp();
+  const { openEnquiry, setSelectedCourse, courses } = useApp();
   const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
   const [filters, setFilters] = useState({
     level: 'All',
@@ -883,18 +919,18 @@ const CoursesPage = () => {
   const categories = ['All', 'Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
   const statuses = ['All', 'Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
 
-  const filteredCourses = mockCourses.filter(course => {
+  const filteredCourses = courses.filter(course => {
     if (filters.level !== 'All' && course.level !== filters.level) return false;
     if (filters.category !== 'All' && course.category !== filters.category) return false;
     if (filters.status !== 'All' && course.status !== filters.status) return false;
     return true;
   });
 
-  const handleLearnMore = (course: React.SetStateAction<null>) => {
+  const handleLearnMore = (course) => {
     setSelectedCourseDetail(course);
   };
 
-  const handleEnquiry = (course: any) => {
+  const handleEnquiry = (course) => {
     setSelectedCourse(course);
     openEnquiry();
   };
@@ -1097,7 +1133,7 @@ const AboutPage = () => {
 
 // FAQs Page
 const FAQsPage = () => {
-  const [openIndex, setOpenIndex] = useState<string | null>(null);
+  const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [
     {
@@ -1260,6 +1296,10 @@ const ContactPage = () => {
     }, 3000);
   };
 
+   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   return (
     <div className="pt-24 pb-20 px-4 bg-white min-h-screen">
       <div className="max-w-6xl mx-auto">
@@ -1353,29 +1393,21 @@ const ContactPage = () => {
           >
             <h2 className="text-2xl font-bold mb-6 text-gray-900">Send us a Message</h2>
 
-            {submitted ? (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="text-center py-12"
-              >
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-10 h-10 text-green-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent!</h3>
-                <p className="text-gray-600">We'll get back to you within 24 hours.</p>
-              </motion.div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+            
+              <form action="https://formspree.io/f/mzdpzzql"
+                   method="POST"
+                    className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Name *
                   </label>
                   <input
                     type="text"
+                    id="name"
+                    name="name"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Your full name"
                   />
@@ -1387,9 +1419,11 @@ const ContactPage = () => {
                   </label>
                   <input
                     type="email"
+                    id="email"
+                      name="email"
                     required
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="your@email.com"
                   />
@@ -1401,9 +1435,11 @@ const ContactPage = () => {
                   </label>
                   <input
                     type="tel"
+                    id="phone"
+                      name="phone"
                     required
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="+91-XXXXXXXXXX"
                   />
@@ -1415,8 +1451,10 @@ const ContactPage = () => {
                   </label>
                   <input
                     type="text"
+                    id="program"
+                    name="program"
                     value={formData.program}
-                    onChange={(e) => setFormData({ ...formData, program: e.target.value })}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     placeholder="Which program are you interested in?"
                   />
@@ -1427,8 +1465,10 @@ const ContactPage = () => {
                     Message
                   </label>
                   <textarea
+                  id="message"
+                    name="message"
                     value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    onChange={handleChange}
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
                     placeholder="Tell us about your learning goals..."
@@ -1442,7 +1482,7 @@ const ContactPage = () => {
                   Send Message
                 </button>
               </form>
-            )}
+            
           </motion.div>
         </div>
       </div>
@@ -1510,7 +1550,7 @@ const HomePage = () => {
                     Mentor-led learning with industry practitioners
                   </li>
                 </ul>
-                <a href = "/DSAI_Generic_Brochure_compressed.pdf" download>
+                <a href = "/DSAI_Generic_Brochure.pdf" download>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1597,9 +1637,11 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Salient Learnings
-            </h3>
+            <img
+              className="w-28 h-18 object-contain mr-2 inline-block"
+              src='./logo.png'
+              alt='Salient Learnings Logo'
+            />
             <p className="text-gray-400">
               Building future-ready talent in AI, Data & Deep Technologies
             </p>
@@ -1685,11 +1727,17 @@ const Footer = () => {
 
 // Main App Component
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState("home");
   const [enquiryOpen, setEnquiryOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
 
-  const openEnquiry = (course = null) => {
+  // Admin state
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+
+  // Courses state - starts with mock data but can be modified
+  const [courses, setCourses] = useState(mockCourses);
+
+  const openEnquiry = (course: any = null) => {
     setSelectedCourse(course);
     setEnquiryOpen(true);
   };
@@ -1699,32 +1747,177 @@ const App = () => {
     setSelectedCourse(null);
   };
 
+  // Admin functions
+  const handleAdminLogin = () => {
+    setIsAdminAuthenticated(true);
+    setCurrentPage("admin-dashboard");
+    // update URL too
+    window.history.pushState({}, "", "/admin-dashboard");
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    setCurrentPage("home");
+    window.history.pushState({}, "", "/");
+  };
+
+  const addCourse = (course: any) => {
+    setCourses([...courses, course]);
+  };
+
+  const updateCourse = (updatedCourse: any) => {
+    setCourses(
+      courses.map((course: any) =>
+        course.id === updatedCourse.id ? updatedCourse : course
+      )
+    );
+  };
+
+  const deleteCourse = (courseId: any) => {
+    setCourses(courses.filter((course: any) => course.id !== courseId));
+  };
+
+  /**
+   * Central navigation helper.
+   * Accepts either a page name like 'home' or a path like '/admin'.
+   * Updates state and browser history.
+   */
+  const navigateTo = useCallback(
+    (routeOrPath: string) => {
+      if (!routeOrPath) return;
+
+      // normalize: if starts with '/', remove it
+      let route = routeOrPath.startsWith("/")
+        ? routeOrPath.slice(1)
+        : routeOrPath;
+
+      // map empty route or root to 'home'
+      if (route === "" || route === "/") route = "home";
+
+      // allow visitors to use routes like '/admin' or '/courses'
+      const validPages = [
+        "home",
+        "courses",
+        "about",
+        "faqs",
+        "contact",
+        "admin",
+        "admin-dashboard",
+      ];
+
+      if (!validPages.includes(route)) {
+        // fallback to home if unknown
+        route = "home";
+      }
+
+      // if admin route and already authenticated, go to admin-dashboard
+      if (route === "admin" && isAdminAuthenticated) {
+        setCurrentPage("admin-dashboard");
+        window.history.pushState({}, "", "/admin-dashboard");
+        return;
+      }
+
+      setCurrentPage(route);
+
+      // Update browser URL for nicer UX
+      if (route === "home") {
+        window.history.pushState({}, "", "/");
+      } else {
+        window.history.pushState({}, "", `/${route}`);
+      }
+    },
+    [isAdminAuthenticated]
+  );
+
+  /**
+   * On mount: handle direct URL visits like https://site.com/admin
+   * and listen for back/forward (popstate)
+   */
+  useEffect(() => {
+    const handleInitialPath = () => {
+      const path = window.location.pathname || "/";
+      // call navigateTo with the current path (e.g. '/admin')
+      navigateTo(path === "/" ? "home" : path);
+    };
+
+    handleInitialPath();
+
+    const onPopState = () => {
+      const path = window.location.pathname || "/";
+      navigateTo(path === "/" ? "home" : path);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [navigateTo]);
+
+  /**
+   * Keep your admin logic: if user is on 'admin' but is authenticated,
+   * redirect to admin-dashboard automatically.
+   * (This ensures typing '/admin' after login works smoothly.)
+   */
+  useEffect(() => {
+    if (currentPage === "admin" && isAdminAuthenticated) {
+      setCurrentPage("admin-dashboard");
+      window.history.pushState({}, "", "/admin-dashboard");
+    }
+    // note: we DO NOT redirect unauthenticated admin attempts here;
+    // we keep the 'admin' login page available.
+  }, [currentPage, isAdminAuthenticated]);
+
   const contextValue = {
     currentPage,
     setCurrentPage,
+    // expose navigateTo so Header/search can call navigateTo(query)
+    navigateTo,
     enquiryOpen,
     openEnquiry,
     closeEnquiry,
     selectedCourse,
-    setSelectedCourse
+    setSelectedCourse,
+    courses,
+    addCourse,
+    updateCourse,
+    deleteCourse,
+    // hint for Header: hide admin link in header UI (Header can read this from context)
+    hideAdminLink: true,
   };
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="min-h-screen bg-white">
-        <Header />
-        
+        {/* Show header only if not on admin pages */}
+        {currentPage !== "admin" &&
+          currentPage !== "admin-dashboard" && <Header />}
+
         <main>
           <AnimatePresence mode="wait">
-            {currentPage === 'home' && <HomePage key="home" />}
-            {currentPage === 'courses' && <CoursesPage key="courses" />}
-            {currentPage === 'about' && <AboutPage key="about" />}
-            {currentPage === 'faqs' && <FAQsPage key="faqs" />}
-            {currentPage === 'contact' && <ContactPage key="contact" />}
+            {currentPage === "home" && <HomePage key="home" />}
+            {currentPage === "courses" && <CoursesPage key="courses" />}
+            {currentPage === "about" && <AboutPage key="about" />}
+            {currentPage === "faqs" && <FAQsPage key="faqs" />}
+            {currentPage === "contact" && <ContactPage key="contact" />}
+            {currentPage === "admin" && !isAdminAuthenticated && (
+              <AdminLogin key="admin-login" onLogin={handleAdminLogin} />
+            )}
+            {currentPage === "admin-dashboard" && isAdminAuthenticated && (
+              <AdminDashboard
+                key="admin-dashboard"
+                onLogout={handleAdminLogout}
+                // pass admin helpers to dashboard if it needs them
+                addCourse={addCourse}
+                updateCourse={updateCourse}
+                deleteCourse={deleteCourse}
+                courses={courses}
+              />
+            )}
           </AnimatePresence>
         </main>
 
-        <Footer />
+        {/* Show footer only if not on admin pages */}
+        {currentPage !== "admin" && currentPage !== "admin-dashboard" && (
+          <Footer />
+        )}
 
         <AnimatePresence>
           {enquiryOpen && (
@@ -1741,3 +1934,729 @@ const App = () => {
 };
 
 export default App;
+
+// ==================== ADMIN COMPONENTS START ====================
+
+// Admin Login Component
+const AdminLogin = ({ onLogin }) => {
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (pin === ADMIN_PIN) {
+      onLogin();
+      setError('');
+    } else {
+      setError('Invalid PIN. Please try again.');
+      setPin('');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full"
+      >
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Admin Access</h2>
+          <p className="text-gray-600">Enter your PIN to access the admin panel</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Access PIN
+            </label>
+            <input
+              type="password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="Enter  PIN"
+              maxLength={12}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent text-center text-2xl tracking-widest"
+              autoFocus
+            />
+          </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Access Admin Panel
+          </button>
+        </form>
+
+        
+      </motion.div>
+    </div>
+  );
+};
+
+// Course Form Component (for Add/Edit)
+const CourseForm = ({ course, onSave, onCancel }) => {
+  const [formData, setFormData] = useState(
+    course || {
+      title: '',
+      category: 'Data Science & AI',
+      level: 'Beginner',
+      duration: '',
+      priceText: '',
+      status: 'Enrolling Now',
+      shortDescription: '',
+      fullDescription: '',
+      curriculum: [{ title: '', topics: [''] }],
+      projects: [''],
+      tools: [''],
+      outcomes: [''],
+      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
+    }
+  );
+
+  const categories = ['Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
+  const levels = ['Beginner', 'Intermediate', 'Advanced'];
+  const statuses = ['Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const addCurriculumModule = () => {
+    setFormData({
+      ...formData,
+      curriculum: [...formData.curriculum, { title: '', topics: [''] }]
+    });
+  };
+
+  const removeCurriculumModule = (index) => {
+    const newCurriculum = formData.curriculum.filter((_, i) => i !== index);
+    setFormData({ ...formData, curriculum: newCurriculum });
+  };
+
+  const updateCurriculumModule = (index, field, value) => {
+    const newCurriculum = [...formData.curriculum];
+    newCurriculum[index][field] = value;
+    setFormData({ ...formData, curriculum: newCurriculum });
+  };
+
+  const addTopic = (moduleIndex) => {
+    const newCurriculum = [...formData.curriculum];
+    newCurriculum[moduleIndex].topics.push('');
+    setFormData({ ...formData, curriculum: newCurriculum });
+  };
+
+  const updateTopic = (moduleIndex, topicIndex, value) => {
+    const newCurriculum = [...formData.curriculum];
+    newCurriculum[moduleIndex].topics[topicIndex] = value;
+    setFormData({ ...formData, curriculum: newCurriculum });
+  };
+
+  const removeTopic = (moduleIndex, topicIndex) => {
+    const newCurriculum = [...formData.curriculum];
+    newCurriculum[moduleIndex].topics = newCurriculum[moduleIndex].topics.filter((_, i) => i !== topicIndex);
+    setFormData({ ...formData, curriculum: newCurriculum });
+  };
+
+  const addArrayItem = (field) => {
+    setFormData({ ...formData, [field]: [...formData[field], ''] });
+  };
+
+  const updateArrayItem = (field, index, value) => {
+    const newArray = [...formData[field]];
+    newArray[index] = value;
+    setFormData({ ...formData, [field]: newArray });
+  };
+
+  const removeArrayItem = (field, index) => {
+    const newArray = formData[field].filter((_, i) => i !== index);
+    setFormData({ ...formData, [field]: newArray });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-xl shadow-lg p-8 max-h-[80vh] overflow-y-auto"
+    >
+      <h3 className="text-2xl font-bold mb-6 text-gray-900">
+        {course ? 'Edit Course' : 'Add New Course'}
+      </h3>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Course Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category *
+            </label>
+            <select
+              required
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            >
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Level *
+            </label>
+            <select
+              required
+              value={formData.level}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            >
+              {levels.map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Duration *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.duration}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+              placeholder="e.g., 3 Months"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Price *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.priceText}
+              onChange={(e) => setFormData({ ...formData, priceText: e.target.value })}
+              placeholder="e.g., INR 50,000"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status *
+            </label>
+            <select
+              required
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            >
+              {statuses.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Image URL
+          </label>
+          <input
+            type="url"
+            value={formData.image}
+            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+            placeholder="https://example.com/image.jpg"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Short Description *
+          </label>
+          <textarea
+            required
+            value={formData.shortDescription}
+            onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+            rows={2}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Full Description *
+          </label>
+          <textarea
+            required
+            value={formData.fullDescription}
+            onChange={(e) => setFormData({ ...formData, fullDescription: e.target.value })}
+            rows={4}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+
+        {/* Curriculum */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <label className="block text-sm font-medium text-gray-700">
+              Curriculum Modules
+            </label>
+            <button
+              type="button"
+              onClick={addCurriculumModule}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              + Add Module
+            </button>
+          </div>
+          
+          {formData.curriculum.map((module, moduleIndex) => (
+            <div key={moduleIndex} className="mb-4 p-4 border border-gray-200 rounded-lg">
+              <div className="flex justify-between items-start mb-3">
+                <input
+                  type="text"
+                  value={module.title}
+                  onChange={(e) => updateCurriculumModule(moduleIndex, 'title', e.target.value)}
+                  placeholder="Module Title"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCurriculumModule(moduleIndex)}
+                  className="ml-2 text-red-600 hover:text-red-700"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="ml-4 space-y-2">
+                {module.topics.map((topic, topicIndex) => (
+                  <div key={topicIndex} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={topic}
+                      onChange={(e) => updateTopic(moduleIndex, topicIndex, e.target.value)}
+                      placeholder="Topic"
+                      className="flex-1 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTopic(moduleIndex, topicIndex)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addTopic(moduleIndex)}
+                  className="text-blue-600 hover:text-blue-700 text-sm"
+                >
+                  + Add Topic
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Projects */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <label className="block text-sm font-medium text-gray-700">Projects</label>
+            <button
+              type="button"
+              onClick={() => addArrayItem('projects')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              + Add Project
+            </button>
+          </div>
+          {formData.projects.map((project, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={project}
+                onChange={(e) => updateArrayItem('projects', index, e.target.value)}
+                placeholder="Project description"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+              />
+              <button
+                type="button"
+                onClick={() => removeArrayItem('projects', index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Tools */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <label className="block text-sm font-medium text-gray-700">Tools & Technologies</label>
+            <button
+              type="button"
+              onClick={() => addArrayItem('tools')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              + Add Tool
+            </button>
+          </div>
+          {formData.tools.map((tool, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={tool}
+                onChange={(e) => updateArrayItem('tools', index, e.target.value)}
+                placeholder="Tool name"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+              />
+              <button
+                type="button"
+                onClick={() => removeArrayItem('tools', index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Outcomes */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <label className="block text-sm font-medium text-gray-700">Career Outcomes</label>
+            <button
+              type="button"
+              onClick={() => addArrayItem('outcomes')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              + Add Outcome
+            </button>
+          </div>
+          {formData.outcomes.map((outcome, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={outcome}
+                onChange={(e) => updateArrayItem('outcomes', index, e.target.value)}
+                placeholder="Career outcome"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+              />
+              <button
+                type="button"
+                onClick={() => removeArrayItem('outcomes', index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Form Actions */}
+        <div className="flex gap-4 pt-4 border-t">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            {course ? 'Update Course' : 'Add Course'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </motion.div>
+  );
+};
+
+// Admin Dashboard Component
+const AdminDashboard = ({ onLogout }) => {
+  const { courses, addCourse, updateCourse, deleteCourse } = useApp();
+  const [showForm, setShowForm] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const handleSaveCourse = (courseData) => {
+    if (editingCourse) {
+      updateCourse({ ...courseData, id: editingCourse.id, slug: editingCourse.slug });
+    } else {
+      const newCourse = {
+        ...courseData,
+        id: Date.now(),
+        slug: courseData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      };
+      addCourse(newCourse);
+    }
+    setShowForm(false);
+    setEditingCourse(null);
+  };
+
+  const handleEdit = (course) => {
+    setEditingCourse(course);
+    setShowForm(true);
+  };
+
+  const handleDelete = (courseId) => {
+    deleteCourse(courseId);
+    setDeleteConfirm(null);
+  };
+
+  const handleAddNew = () => {
+    setEditingCourse(null);
+    setShowForm(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-24 pb-20 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Admin Header */}
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+              <p className="text-gray-600">Manage courses and content</p>
+            </div>
+            <button
+              onClick={onLogout}
+              className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="text-3xl font-bold text-blue-600 mb-2">{courses.length}</div>
+            <div className="text-gray-600">Total Courses</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="text-3xl font-bold text-green-600 mb-2">
+              {courses.filter(c => c.status === 'Enrolling Now').length}
+            </div>
+            <div className="text-gray-600">Active Courses</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="text-3xl font-bold text-yellow-600 mb-2">
+              {courses.filter(c => c.status === 'Launching Soon').length}
+            </div>
+            <div className="text-gray-600">Coming Soon</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
+              {courses.filter(c => c.status === 'Planned').length}
+            </div>
+            <div className="text-gray-600">Planned</div>
+          </div>
+        </div>
+
+        {/* Add Course Button */}
+        {!showForm && (
+          <div className="mb-8">
+            <button
+              onClick={handleAddNew}
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <span className="text-xl">+</span> Add New Course
+            </button>
+          </div>
+        )}
+
+        {/* Course Form */}
+        {showForm && (
+          <div className="mb-8">
+            <CourseForm
+              course={editingCourse}
+              onSave={handleSaveCourse}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingCourse(null);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Courses List */}
+        {!showForm && (
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">All Courses</h2>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Course
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Level
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {courses.map((course) => (
+                    <tr key={course.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <img
+                            src={course.image}
+                            alt={course.title}
+                            className="w-12 h-12 rounded-lg object-cover mr-3"
+                          />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                            <div className="text-sm text-gray-500">{course.duration}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{course.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {course.level}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          course.status === 'Enrolling Now' ? 'bg-green-100 text-green-800' :
+                          course.status === 'Launching Soon' ? 'bg-blue-100 text-blue-800' :
+                          course.status === 'Under Development' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {course.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {course.priceText}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleEdit(course)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(course)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {deleteConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+              onClick={() => setDeleteConfirm(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-2xl p-8 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <X className="w-8 h-8 text-red-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Course?</h3>
+                  <p className="text-gray-600 mb-6">
+                    Are you sure you want to delete "<strong>{deleteConfirm.title}</strong>"? This action cannot be undone.
+                  </p>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDelete(deleteConfirm.id)}
+                      className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+// ==================== ADMIN COMPONENTS END ====================
