@@ -698,7 +698,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
     message: '',
     contactMethod: 'email',
   });
-  const [submitted, setSubmitted] = useState(false);
+ // const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -706,27 +706,27 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
     }
   }, [selectedCourse]);
 
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
+  // const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  //   e.preventDefault();
     
-    // Mock API call
-    console.log('Enquiry submitted:', formData);
+  //   // Mock API call
+  //   console.log('Enquiry submitted:', formData);
     
-    // Show success message
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        program: '',
-        message: '',
-        contactMethod: 'email'
-      });
-    }, 2000);
-  };
+  //   // Show success message
+  //   setSubmitted(true);
+  //   setTimeout(() => {
+  //     setSubmitted(false);
+  //     onClose();
+  //     setFormData({
+  //       name: '',
+  //       email: '',
+  //       phone: '',
+  //       program: '',
+  //       message: '',
+  //       contactMethod: 'email'
+  //     });
+  //   }, 2000);
+  // };
 
   if (!isOpen) return null;
 
@@ -759,19 +759,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
           </button>
         </div>
 
-        {submitted ? (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="text-center py-8"
-          >
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-            <h4 className="text-xl font-bold text-gray-900 mb-2">Thank You!</h4>
-            <p className="text-gray-600">We'll get back to you soon.</p>
-          </motion.div>
-        ) : (
+       
           <form action="https://formspree.io/f/xanogwrj"
                    method="POST"
                     className="space-y-6">
@@ -899,8 +887,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
               </a>
             </p>
           </form>
-        )}
-      </motion.div>
+              </motion.div>
     </motion.div>
   );
 };
@@ -1284,17 +1271,17 @@ const ContactPage = () => {
     program: '',
     message: ''
   });
-  const [submitted, setSubmitted] = useState(false);
+ // const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
-    e.preventDefault();
-    console.log('Contact form submitted:', formData);
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', phone: '', program: '', message: '' });
-    }, 3000);
-  };
+  // const handleSubmit = (e: { preventDefault: () => void; }) => {
+  //   e.preventDefault();
+  //   console.log('Contact form submitted:', formData);
+  //   setSubmitted(true);
+  //   setTimeout(() => {
+  //     setSubmitted(false);
+  //     setFormData({ name: '', email: '', phone: '', program: '', message: '' });
+  //   }, 3000);
+  // };
 
    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
