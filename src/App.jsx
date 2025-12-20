@@ -3,21 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
 import './App.css';
 // Context for global state
-interface AppContextType {
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
-  enquiryOpen: boolean;
-  openEnquiry: (course?: typeof mockCourses[0]) => void;
-  closeEnquiry: () => void;
-  selectedCourse: typeof mockCourses[0] | null;
-  setSelectedCourse: (course: typeof mockCourses[0] | null) => void;
-  courses: typeof mockCourses;
-  addCourse: (course: typeof mockCourses[0]) => void;
-  updateCourse: (course: typeof mockCourses[0]) => void;
-  deleteCourse: (courseId: number) => void;
-}
 
-const AppContext = createContext<AppContextType | null>(null);
+//Database imports - MAKE SURE TO CREATE THESE FILES
+import { 
+  fetchCourses, 
+  createCourse, 
+  updateCourse as updateCourseDB, 
+  deleteCourse as deleteCourseDB 
+} from './services/coursesService';
+import { testConnection } from './config/supabase';
+
+
+const AppContext = createContext(null);
 
 const useApp = () => {
   const context = useContext(AppContext);
@@ -175,7 +172,7 @@ const stats = [
 ];
 
 // Animated counter component
-const Counter = ({ end, duration = 2, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) => {
+const Counter = ({ end, duration = 2, prefix = '', suffix = '' }) => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -483,8 +480,8 @@ const WhySalient = () => {
 };
 
 // Course Card Component
-const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: typeof mockCourses[0]; onLearnMore: (course: typeof mockCourses[0]) => void; onEnquiry: (course: typeof mockCourses[0]) => void }) => {
-  const statusColors: Record<string, string> = {
+const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
+  const statusColors = {
     'Enrolling Now': 'bg-green-100 text-green-800',
     'Launching Soon': 'bg-blue-100 text-blue-800',
     'Under Development': 'bg-yellow-100 text-yellow-800',
@@ -553,7 +550,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }: { course: typeof mockCou
 };
 
 // Course Detail Modal
-const CourseDetailModal = ({ course, onClose }: { course: typeof mockCourses[0] | null; onClose: () => void }) => {
+const CourseDetailModal = ({ course, onClose }) => {
   if (!course) return null;
 
   return (
@@ -689,7 +686,7 @@ const CourseDetailModal = ({ course, onClose }: { course: typeof mockCourses[0] 
 };
 
 // Enquiry Modal
-const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: boolean; onClose: () => void; selectedCourse?: any }) => {
+const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -730,7 +727,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
 
   if (!isOpen) return null;
 
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -895,7 +892,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }: { isOpen: bool
 // Courses Page
 const CoursesPage = () => {
   const { openEnquiry, setSelectedCourse, courses } = useApp();
-  const [selectedCourseDetail, setSelectedCourseDetail] = useState<typeof mockCourses[0] | null>(null);
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
   const [filters, setFilters] = useState({
     level: 'All',
     category: 'All',
@@ -913,11 +910,11 @@ const CoursesPage = () => {
     return true;
   });
 
-  const handleLearnMore = (course: typeof mockCourses[0]) => {
+  const handleLearnMore = (course) => {
     setSelectedCourseDetail(course);
   };
 
-  const handleEnquiry = (course: { id: number; slug: string; title: string; category: string; level: string; duration: string; priceText: string; status: string; shortDescription: string; fullDescription: string; curriculum: { title: string; topics: string[]; }[]; projects: string[]; tools: string[]; outcomes: string[]; image: string; } | null) => {
+  const handleEnquiry = (course) => {
     setSelectedCourse(course);
     openEnquiry();
   };
@@ -1120,7 +1117,7 @@ const AboutPage = () => {
 
 // FAQs Page
 const FAQsPage = () => {
-  const [openIndex, setOpenIndex] = useState<string | null>(null);
+  const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [
     {
@@ -1283,7 +1280,7 @@ const ContactPage = () => {
   //   }, 3000);
   // };
 
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -1716,15 +1713,40 @@ const Footer = () => {
 const App = () => {
   const [currentPage, setCurrentPage] = useState("home");
   const [enquiryOpen, setEnquiryOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
-  // Admin state
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+// Admin state
+const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
-  // Courses state - starts with mock data but can be modified
-  const [courses, setCourses] = useState(mockCourses);
+// Courses state - loads from database
+const [courses, setCourses] = useState([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
 
-  const openEnquiry = (course: any = null) => {
+// Load courses from database on mount
+useEffect(() => {
+  loadCourses();
+  testConnection(); // Test Supabase connection
+}, []);
+
+const loadCourses = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const data = await fetchCourses();
+    setCourses(data);
+    console.log('📚 Loaded courses from database:', data.length);
+  } catch (err) {
+    console.error('Error loading courses:', err);
+    setError('Failed to load courses. Please check your database connection.');
+    // Fallback to mock data if database fails
+    setCourses(mockCourses);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const openEnquiry = (course = null) => {
     setSelectedCourse(course);
     setEnquiryOpen(true);
   };
@@ -1748,21 +1770,42 @@ const App = () => {
     window.history.pushState({}, "", "/");
   };
 
-  const addCourse = (course: any) => {
-    setCourses([...courses, course]);
-  };
+const addCourse = async (course) => {
+  try {
+    const newCourse = await createCourse(course);
+    setCourses([newCourse, ...courses]);
+    console.log('✅ Course added to database');
+    return newCourse;
+  } catch (err) {
+    console.error('Error adding course:', err);
+    throw err;
+  }
+};
 
-  const updateCourse = (updatedCourse: any) => {
-    setCourses(
-      courses.map((course: any) =>
-        course.id === updatedCourse.id ? updatedCourse : course
-      )
-    );
-  };
+const updateCourse = async (updatedCourse) => {
+  try {
+    const updated = await updateCourseDB(updatedCourse.id, updatedCourse);
+    setCourses(courses.map(course => 
+      course.id === updatedCourse.id ? updated : course
+    ));
+    console.log('✅ Course updated in database');
+    return updated;
+  } catch (err) {
+    console.error('Error updating course:', err);
+    throw err;
+  }
+};
 
-  const deleteCourse = (courseId: any) => {
-    setCourses(courses.filter((course: any) => course.id !== courseId));
-  };
+const deleteCourse = async (courseId) => {
+  try {
+    await deleteCourseDB(courseId);
+    setCourses(courses.filter(course => course.id !== courseId));
+    console.log('✅ Course deleted from database');
+  } catch (err) {
+    console.error('Error deleting course:', err);
+    throw err;
+  }
+};
 
   /**
    * Central navigation helper.
@@ -1770,7 +1813,7 @@ const App = () => {
    * Updates state and browser history.
    */
   const navigateTo = useCallback(
-    (routeOrPath: string) => {
+    (routeOrPath) => {
       if (!routeOrPath) return;
 
       // normalize: if starts with '/', remove it
@@ -1798,7 +1841,7 @@ const App = () => {
       }
 
       // if admin route and already authenticated, go to admin-dashboard
-      if (route === "admin" && isAdminAuthenticated) {
+      if (route === "admin-dashboard" && isAdminAuthenticated) {
         setCurrentPage("admin-dashboard");
         window.history.pushState({}, "", "/admin-dashboard");
         return;
@@ -1852,27 +1895,44 @@ const App = () => {
     // we keep the 'admin' login page available.
   }, [currentPage, isAdminAuthenticated]);
 
-  const contextValue = {
-    currentPage,
-    setCurrentPage,
-    // expose navigateTo so Header/search can call navigateTo(query)
-    navigateTo,
-    enquiryOpen,
-    openEnquiry,
-    closeEnquiry,
-    selectedCourse,
-    setSelectedCourse,
-    courses,
-    addCourse,
-    updateCourse,
-    deleteCourse,
-    // hint for Header: hide admin link in header UI (Header can read this from context)
-    hideAdminLink: true,
-  };
+ const contextValue = {
+  currentPage,
+  setCurrentPage,
+  enquiryOpen,
+  openEnquiry,
+  closeEnquiry,
+  selectedCourse,
+  setSelectedCourse,
+  courses,
+  addCourse,
+  updateCourse,
+  deleteCourse,
+  loading,        // ADD
+  error,          // ADD
+  loadCourses     // ADD
+};
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="min-h-screen bg-white">
+
+        {/* ADD THIS LOADING STATE */}
+      {loading && (
+        <div className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading courses...</p>
+          </div>
+        </div>
+      )}
+
+      {/* ADD THIS ERROR STATE */}
+      {error && !loading && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md">
+          <p className="font-medium mb-2">⚠️ Database Error</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
         {/* Show header only if not on admin pages */}
         {currentPage !== "admin" &&
           currentPage !== "admin-dashboard" && <Header />}
@@ -1925,11 +1985,11 @@ export default App;
 // ==================== ADMIN COMPONENTS START ====================
 
 // Admin Login Component
-const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
+const AdminLogin = ({ onLogin }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (pin === ADMIN_PIN) {
       onLogin();
@@ -1996,11 +2056,9 @@ const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
 };
 
 // Course Form Component (for Add/Edit)
-const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0] | null; onSave: (course: typeof mockCourses[0]) => void; onCancel: () => void }) => {
+const CourseForm = ({ course, onSave, onCancel }) => {
   const [formData, setFormData] = useState(
     course || {
-      id: 0,
-      slug: '',
       title: '',
       category: 'Data Science & AI',
       level: 'Beginner',
@@ -2016,19 +2074,22 @@ const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0
       image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
     }
   );
+  const [saving, setSaving] = useState(false);
 
   const categories = ['Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
   const statuses = ['Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
 
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const dataToSave = {
-      ...formData,
-      id: formData.id || Date.now(),
-      slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    };
-    onSave(dataToSave);
+    setSaving(true);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('Error saving course:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addCurriculumModule = () => {
@@ -2038,50 +2099,47 @@ const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0
     });
   };
 
-  const removeCurriculumModule = (index: number) => {
+  const removeCurriculumModule = (index) => {
     const newCurriculum = formData.curriculum.filter((_, i) => i !== index);
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const updateCurriculumModule = (index: number, field: string, value: string) => {
+  const updateCurriculumModule = (index, field, value) => {
     const newCurriculum = [...formData.curriculum];
-  (newCurriculum[index] as any)[field] = value;
+    newCurriculum[index][field] = value;
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const addTopic = (moduleIndex: number) => {
+  const addTopic = (moduleIndex) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics.push('');
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const updateTopic = (moduleIndex: number, topicIndex: number, value: string) => {
+  const updateTopic = (moduleIndex, topicIndex, value) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics[topicIndex] = value;
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const removeTopic = (moduleIndex: number, topicIndex: number) => {
+  const removeTopic = (moduleIndex, topicIndex) => {
     const newCurriculum = [...formData.curriculum];
     newCurriculum[moduleIndex].topics = newCurriculum[moduleIndex].topics.filter((_, i) => i !== topicIndex);
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
-  const addArrayItem = (field: 'projects' | 'tools' | 'outcomes') => {
-    const currentArray = formData[field];
-    setFormData({ ...formData, [field]: [...currentArray, ''] });
+  const addArrayItem = (field) => {
+    setFormData({ ...formData, [field]: [...formData[field], ''] });
   };
 
-  const updateArrayItem = (field: 'projects' | 'tools' | 'outcomes', index: number, value: string) => {
-    const currentArray = formData[field];
-    const newArray = [...currentArray];
+  const updateArrayItem = (field, index, value) => {
+    const newArray = [...formData[field]];
     newArray[index] = value;
     setFormData({ ...formData, [field]: newArray });
   };
 
-  const removeArrayItem = (field: 'projects' | 'tools' | 'outcomes', index: number) => {
-    const currentArray = formData[field];
-    const newArray = currentArray.filter((_: any, i: any) => i !== index);
+  const removeArrayItem = (field, index) => {
+    const newArray = formData[field].filter((_, i) => i !== index);
     setFormData({ ...formData, [field]: newArray });
   };
 
@@ -2392,14 +2450,16 @@ const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0
         <div className="flex gap-4 pt-4 border-t">
           <button
             type="submit"
-            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            disabled={saving}
+            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            {course ? 'Update Course' : 'Add Course'}
+            {saving ? 'Saving...' : (course ? 'Update Course' : 'Add Course')}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+            disabled={saving}
+            className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -2410,35 +2470,85 @@ const CourseForm = ({ course, onSave, onCancel }: { course: typeof mockCourses[0
 };
 
 // Admin Dashboard Component
-const AdminDashboard = ({ onLogout, addCourse, updateCourse, deleteCourse, courses }: { onLogout: () => void; addCourse: (course: any) => void; updateCourse: (updatedCourse: any) => void; deleteCourse: (courseId: any) => void; courses: typeof mockCourses }) => {
+const AdminDashboard = ({ onLogout }) => {
+  const { courses, addCourse, updateCourse, deleteCourse } = useApp();
   const [showForm, setShowForm] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<typeof mockCourses[0] | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<typeof mockCourses[0] | null>(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+const [adminAccessKey, setAdminAccessKey] = useState("");
 
-  const handleSaveCourse = (courseData: { title: any; id?: number; slug?: string; category?: string; level?: string; duration?: string; priceText?: string; status?: string; shortDescription?: string; fullDescription?: string; curriculum?: { title: string; topics: string[]; }[]; projects?: string[]; tools?: string[]; outcomes?: string[]; image?: string; }) => {
-    if (editingCourse) {
-      updateCourse({ ...courseData, id: editingCourse.id, slug: editingCourse.slug });
-    } else {
-      const newCourse = {
-        ...courseData,
-        id: Date.now(),
-        slug: courseData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-      };
-      addCourse(newCourse);
+const handleSaveCourse = async (courseData) => {
+  try {
+    const endpoint = editingCourse
+      ? "update-course"
+      : "save-course";
+
+    const payload = {
+      adminKey: adminAccessKey,
+      course: editingCourse
+        ? { ...courseData, id: editingCourse.id }
+        : courseData,
+    };
+
+    const res = await fetch(
+      `https://klvoknkxgszgsuuqblds.functions.supabase.co/${endpoint}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
     }
+
+    // ✅ refresh UI after save
+    window.location.reload();
+
     setShowForm(false);
     setEditingCourse(null);
-  };
+  } catch (error) {
+    console.error("Error saving course:", error);
+    alert("Failed to save course");
+  }
+};
 
-  const handleEdit = (courseId: number) => {
-    setEditingCourse(courseId ? courses.find(c => c.id === courseId) || null : null);
+
+  const handleEdit = (course) => {
+    setEditingCourse(course);
     setShowForm(true);
   };
 
-  const handleDelete = (courseId: number) => {
-    deleteCourse(courseId);
+const handleDelete = async (courseId) => {
+  try {
+    const res = await fetch(
+      "https://klvoknkxgszgsuuqblds.functions.supabase.co/delete-course",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey: adminAccessKey,
+          id: courseId,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err);
+    }
+
+    window.location.reload();
     setDeleteConfirm(null);
-  };
+  } catch (error) {
+    console.error("Error deleting course:", error);
+  }
+};
+
 
   const handleAddNew = () => {
     setEditingCourse(null);
@@ -2586,7 +2696,7 @@ const AdminDashboard = ({ onLogout, addCourse, updateCourse, deleteCourse, cours
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleEdit(course as any)}
+                          onClick={() => handleEdit(course)}
                           className="text-blue-600 hover:text-blue-900 mr-4"
                         >
                           Edit
@@ -2654,5 +2764,4 @@ const AdminDashboard = ({ onLogout, addCourse, updateCourse, deleteCourse, cours
     </div>
   );
 };
-
 // ==================== ADMIN COMPONENTS END ====================
