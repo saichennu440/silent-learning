@@ -1841,7 +1841,7 @@ const deleteCourse = async (courseId) => {
       }
 
       // if admin route and already authenticated, go to admin-dashboard
-      if (route === "admin-dashboard" && isAdminAuthenticated) {
+      if (route === "admin" && isAdminAuthenticated) {
         setCurrentPage("admin-dashboard");
         window.history.pushState({}, "", "/admin-dashboard");
         return;
