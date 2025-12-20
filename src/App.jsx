@@ -2475,80 +2475,34 @@ const AdminDashboard = ({ onLogout }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-const [adminAccessKey, setAdminAccessKey] = useState("");
 
-const handleSaveCourse = async (courseData) => {
-  try {
-    const endpoint = editingCourse
-      ? "update-course"
-      : "save-course";
-
-    const payload = {
-      adminKey: adminAccessKey,
-      course: editingCourse
-        ? { ...courseData, id: editingCourse.id }
-        : courseData,
-    };
-
-    const res = await fetch(
-      `https://klvoknkxgszgsuuqblds.functions.supabase.co/${endpoint}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+  const handleSaveCourse = async (courseData) => {
+    try {
+      if (editingCourse) {
+        await updateCourse({ ...courseData, id: editingCourse.id, slug: editingCourse.slug });
+      } else {
+        await addCourse(courseData);
       }
-    );
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err);
+      setShowForm(false);
+      setEditingCourse(null);
+    } catch (error) {
+      console.error('Error saving course:', error);
     }
-
-    // ✅ refresh UI after save
-    window.location.reload();
-
-    setShowForm(false);
-    setEditingCourse(null);
-  } catch (error) {
-    console.error("Error saving course:", error);
-    alert("Failed to save course");
-  }
-};
-
+  };
 
   const handleEdit = (course) => {
     setEditingCourse(course);
     setShowForm(true);
   };
 
-const handleDelete = async (courseId) => {
-  try {
-    const res = await fetch(
-      "https://klvoknkxgszgsuuqblds.functions.supabase.co/delete-course",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminKey: adminAccessKey,
-          id: courseId,
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err);
+  const handleDelete = async (courseId) => {
+    try {
+      await deleteCourse(courseId);
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting course:', error);
     }
-
-    window.location.reload();
-    setDeleteConfirm(null);
-  } catch (error) {
-    console.error("Error deleting course:", error);
-  }
-};
-
+  };
 
   const handleAddNew = () => {
     setEditingCourse(null);
