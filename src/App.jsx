@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
+
 import './App.css';
 // Context for global state
 
@@ -21,6 +22,7 @@ const useApp = () => {
   if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };
+
 
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
@@ -196,8 +198,10 @@ const Counter = ({ end, duration = 2, prefix = '', suffix = '' }) => {
 // Header Component
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [coursesOpen, setCoursesOpen] = useState(false); // desktop hover state
+  const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false); // mobile sublist
   const [scrolled, setScrolled] = useState(false);
-  const { currentPage, setCurrentPage, openEnquiry } = useApp();
+  const { currentPage, setCurrentPage, openEnquiry, courses, setSelectedCourseDetail } = useApp();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -211,8 +215,23 @@ const Header = () => {
     { label: 'About', page: 'about' },
     { label: 'FAQs', page: 'faqs' },
     { label: 'Contact', page: 'contact' },
-    
   ];
+
+  const handleCourseClick = (course) => {
+    // set the selected course detail so modal opens on Courses page
+    setSelectedCourseDetail(course);
+
+    // navigate to Courses page
+    setCurrentPage('courses');
+
+    // close mobile/menu states
+    setIsOpen(false);
+    setMobileCoursesOpen(false);
+    setCoursesOpen(false);
+
+    // scroll to top of courses area for better UX
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+  };
 
   return (
     <motion.header
@@ -232,27 +251,100 @@ const Header = () => {
           >
             <img
               className="w-28 h-24 object-contain mr-2 inline-block"
-              src='./logo.png'
-              alt='Salient Learnings Logo'
+              src="./logo.png"
+              alt="Salient Learnings Logo"
             />
-           
           </motion.div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <button
-                key={item.page}
-                onClick={() => setCurrentPage(item.page)}
-                className={`text-sm font-medium transition-colors ${
-                  currentPage === item.page
-                    ? 'text-blue-600'
-                    : 'text-gray-700 hover:text-blue-600'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              if (item.page === 'courses') {
+                return (
+                  <div
+                    key={item.page}
+                    className="relative"
+                    onMouseEnter={() => setCoursesOpen(true)}
+                    onMouseLeave={() => setCoursesOpen(false)}
+                  >
+                    <button
+                      onClick={() => setCurrentPage('courses')}
+                      className={`text-sm font-medium transition-colors ${
+                        currentPage === item.page
+                          ? 'text-blue-600'
+                          : 'text-gray-700 hover:text-blue-600'
+                      }`}
+                      aria-haspopup="true"
+                      aria-expanded={coursesOpen}
+                    >
+                      {item.label}
+                    </button>
+
+                    {/* Courses dropdown */}
+                    <AnimatePresence>
+                      {coursesOpen && courses && courses.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute left-0 mt-3 w-80 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50"
+                        >
+                          <div className="p-3 max-h-72 overflow-y-auto">
+                            {courses.slice(0, 8).map((course) => (
+                              <button
+                                key={course.id}
+                                onClick={() => handleCourseClick(course)}
+                                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex flex-col"
+                              >
+                                <span className="font-semibold text-gray-800 text-sm">
+                                  {course.title}
+                                </span>
+                                <span className="text-xs text-gray-500 truncate">
+                                  {course.shortDescription ?? course.subtitle ?? ''}
+                                </span>
+                              </button>
+                            ))}
+
+                            {/* optional "View all courses" link */}
+                            <div className="mt-2 border-t pt-2">
+                              <button
+                                onClick={() => {
+                                  setCurrentPage('courses');
+                                  setCoursesOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:underline"
+                              >
+                                View all courses
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
+              // other nav items
+              return (
+                <button
+                  key={item.page}
+                  onClick={() => {
+                    setCurrentPage(item.page);
+                    setCoursesOpen(false);
+                  }}
+                  className={`text-sm font-medium transition-colors ${
+                    currentPage === item.page
+                      ? 'text-blue-600'
+                      : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -267,6 +359,7 @@ const Header = () => {
           <button
             className="md:hidden text-gray-700"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -281,22 +374,55 @@ const Header = () => {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden pb-4"
             >
-              {navItems.map((item) => (
-                <button
-                  key={item.page}
-                  onClick={() => {
-                    setCurrentPage(item.page);
-                    setIsOpen(false);
-                  }}
-                  className={`block w-full text-left py-2 px-4 ${
-                    currentPage === item.page
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {navItems.map((item) => {
+                if (item.page === 'courses') {
+                  return (
+                    <div key={item.page} className="w-full">
+                      <button
+                        onClick={() => setMobileCoursesOpen(!mobileCoursesOpen)}
+                        className={`w-full text-left py-2 px-4 flex justify-between items-center ${
+                          currentPage === item.page ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        <span className="text-sm">{mobileCoursesOpen ? '−' : '+'}</span>
+                      </button>
+
+                      {mobileCoursesOpen && courses && courses.length > 0 && (
+                        <div className="pl-6 pr-4 pb-2 space-y-1">
+                          {courses.map((course) => (
+                            <button
+                              key={course.id}
+                              onClick={() => handleCourseClick(course)}
+                              className="block w-full text-left py-2 px-2 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                              <div className="font-medium text-sm">{course.title}</div>
+                              <div className="text-xs text-gray-500 truncate">{course.shortDescription ?? ''}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={item.page}
+                    onClick={() => {
+                      setCurrentPage(item.page);
+                      setIsOpen(false);
+                      setMobileCoursesOpen(false);
+                    }}
+                    className={`block w-full text-left py-2 px-4 ${
+                      currentPage === item.page ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+
               <button
                 onClick={() => {
                   openEnquiry();
@@ -314,6 +440,7 @@ const Header = () => {
   );
 };
 
+
 // Hero Section
 const Hero = () => {
   const { setCurrentPage, openEnquiry } = useApp();
@@ -329,7 +456,7 @@ const Hero = () => {
         >
        <motion.h1
   className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 
-             bg-linear-to-r from-blue-900 via-purple-900 to-pink-900 
+             bg-blue-900 
              bg-clip-text text-transparent
              leading-[1.15] pb-2"
   initial={{ opacity: 0, y: 20 }}
@@ -350,7 +477,7 @@ const Hero = () => {
           </motion.p>
           
           <motion.p
-            className="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto"
+            className="text-lg md:text-xl text-gray-800 mb-8 max-w-3xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
@@ -405,7 +532,7 @@ const Hero = () => {
                   suffix={stat.suffix}
                 />
               </div>
-              <div className="text-sm text-gray-600">{stat.label}</div>
+              <div className="text-sm text-gray-800">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -449,10 +576,10 @@ const WhySalient = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Why Salient Learnings
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-800 max-w-3xl mx-auto">
             Your ideal learning partner for AI and data science excellence
           </p>
         </motion.div>
@@ -470,7 +597,7 @@ const WhySalient = () => {
             >
               <div className="text-blue-600 mb-4">{pillar.icon}</div>
               <h3 className="text-xl font-bold mb-2 text-gray-900">{pillar.title}</h3>
-              <p className="text-gray-600">{pillar.description}</p>
+              <p className="text-gray-800">{pillar.description}</p>
             </motion.div>
           ))}
         </div>
@@ -518,7 +645,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
         </div>
         
         <h3 className="text-xl font-bold mb-2 text-gray-900">{course.title}</h3>
-        <p className="text-gray-600 mb-4 line-clamp-2">{course.shortDescription}</p>
+        <p className="text-gray-800 mb-4 line-clamp-2">{course.shortDescription}</p>
         
         <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500">
           <span className="flex items-center">
@@ -590,19 +717,19 @@ const CourseDetailModal = ({ course, onClose }) => {
             </span>
           </div>
           
-          <h2 className="text-3xl font-bold mb-4 text-gray-900">{course.title}</h2>
+          <h2 className="text-3xl font-bold mb-4 text-blue-900">{course.title}</h2>
           
           <div className="flex flex-wrap gap-4 mb-6 text-sm">
-            <span className="flex items-center text-gray-600">
+            <span className="flex items-center text-gray-800">
               <Award className="w-5 h-5 mr-2 text-blue-600" /> {course.level}
             </span>
-            <span className="text-gray-600">{course.duration}</span>
+            <span className="text-gray-800">{course.duration}</span>
             <span className="font-semibold text-blue-600">{course.priceText}</span>
           </div>
 
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-3 text-gray-900">Overview</h3>
-            <p className="text-gray-600 leading-relaxed">{course.fullDescription}</p>
+            <p className="text-gray-800 leading-relaxed">{course.fullDescription}</p>
           </div>
 
           <div className="mb-8">
@@ -613,7 +740,7 @@ const CourseDetailModal = ({ course, onClose }) => {
                   <h4 className="font-semibold text-gray-900 mb-2">{module.title}</h4>
                   <ul className="space-y-1">
                     {module.topics.map((topic, idx) => (
-                      <li key={idx} className="text-gray-600 flex items-start">
+                      <li key={idx} className="text-gray-800 flex items-start">
                         <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-1" />
                         {topic}
                       </li>
@@ -628,7 +755,7 @@ const CourseDetailModal = ({ course, onClose }) => {
             <h3 className="text-xl font-bold mb-3 text-gray-900">Projects & Capstone</h3>
             <ul className="space-y-2">
               {course.projects.map((project, index) => (
-                <li key={index} className="flex items-start text-gray-600">
+                <li key={index} className="flex items-start text-gray-800">
                   <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                   {project}
                 </li>
@@ -654,7 +781,7 @@ const CourseDetailModal = ({ course, onClose }) => {
             <h3 className="text-xl font-bold mb-3 text-gray-900">Career Outcomes</h3>
             <ul className="space-y-2">
               {course.outcomes.map((outcome, index) => (
-                <li key={index} className="flex items-start text-gray-600">
+                <li key={index} className="flex items-start text-gray-800">
                   <Award className="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" />
                   {outcome}
                 </li>
@@ -687,16 +814,17 @@ const CourseDetailModal = ({ course, onClose }) => {
 
 // Enquiry Modal
 const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     program: selectedCourse?.title || '',
     message: '',
-    contactMethod: 'email',
+    contactMethod: 'Whatsapp',
   });
  // const [submitted, setSubmitted] = useState(false);
-
+const [submitted, setSubmitted] = useState(false);
   useEffect(() => {
     if (selectedCourse) {
       setFormData(prev => ({ ...prev, program: selectedCourse.title }));
@@ -731,6 +859,49 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const response = await fetch("https://formspree.io/f/xanogwrj", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (response.ok) {
+      // ✅ ONLY NOW trigger download
+      setSubmitted(true);
+      window.dispatchEvent(
+        new CustomEvent("enquiry-submitted-success")
+      );
+
+      
+
+    setTimeout(() => {
+    setSubmitted(false);
+    onClose();
+
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      program: "",
+      message: "",
+      contactMethod: "Whatsapp",
+    });
+  }, 2000);
+}
+  } catch (error) {
+    console.error("Enquiry failed", error);
+  }
+};
+
+
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -746,6 +917,19 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
         className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+{submitted && (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="mb-6 p-4 bg-green-100 text-green-800 rounded-lg text-center font-medium"
+  >
+    ✅ Enquiry submitted successfully!  
+    <br />
+    Your curriculum download will start shortly.
+  </motion.div>
+)}
+
+
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-gray-900">Get in Touch</h3>
           <button
@@ -757,9 +941,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
         </div>
 
        
-          <form action="https://formspree.io/f/xanogwrj"
-                   method="POST"
-                    className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Full Name *
@@ -810,17 +992,24 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Program Interested In
+                Course Interested In
               </label>
-              <input
-                type="text"
+              <select
                 id="program"
-                    name="program"
+                name="program"
                 value={formData.program}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="Select a program"
-              />
+              >
+                <option value="">Select a course</option>
+                <option value="Data Science">Data Science</option>
+                <option value="Web Development">Cyber Security</option>
+                <option value="Mobile App Development">Python Course</option>
+                <option value="Generative AI & Prompt Engineering">Java Full Stack Course</option>
+                <option value="AI in Healthcare & Life Sciences">DevOps course</option>
+                <option value="Computer Vision & Autonomous Systems">Generative AI Course</option>
+              </select>
+
             </div>
 
             <div>
@@ -831,14 +1020,14 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    value="email"
+                    value="Whatsapp"
                      id="contactMethod"
                       name="contactMethod"
-                    checked={formData.contactMethod === 'email'}
+                    checked={formData.contactMethod === 'Whatsapp'}
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  Email
+                  Whatsapp
                 </label>
                 <label className="flex items-center">
                   <input
@@ -850,7 +1039,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  Phone
+                  Phone Call
                 </label>
               </div>
             </div>
@@ -870,12 +1059,18 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Submit Enquiry
-            </button>
+           <button
+  type="submit"
+  disabled={submitted}
+  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors
+    ${submitted
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-blue-600 hover:bg-blue-700 text-white"
+    }`}
+>
+  {submitted ? "Submitting..." : "Submit Enquiry"}
+</button>
+
 
             <p className="text-xs text-gray-500 text-center">
               Or email us directly at{' '}
@@ -890,9 +1085,8 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
 };
 
 // Courses Page
-const CoursesPage = () => {
+const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
   const { openEnquiry, setSelectedCourse, courses } = useApp();
-  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
   const [filters, setFilters] = useState({
     level: 'All',
     category: 'All',
@@ -927,15 +1121,15 @@ const CoursesPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Explore Our Programs
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-800 max-w-3xl mx-auto">
             Choose from our comprehensive range of AI and Data Science programs designed for every skill level
           </p>
         </motion.div>
 
-        {/* Filters */}
+        {/* Filters
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -943,7 +1137,7 @@ const CoursesPage = () => {
           className="bg-white rounded-xl shadow-md p-6 mb-8"
         >
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-600" />
+            <Filter className="w-5 h-5 text-gray-800" />
             <h3 className="font-semibold text-gray-900">Filters</h3>
           </div>
           
@@ -987,7 +1181,7 @@ const CoursesPage = () => {
               </select>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1036,8 +1230,8 @@ const AboutPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">About Salient Learnings</h1>
-          <p className="text-xl text-gray-600 leading-relaxed">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-blue-900">About Salient Learnings</h1>
+          <p className="text-xl text-gray-800 leading-relaxed">
             Salient Learnings is a future-focused education platform dedicated to building industry-ready talent in AI, Data Science, Generative AI & Deep Technologies through mentor-led, hands-on learning.
           </p>
         </motion.div>
@@ -1048,8 +1242,8 @@ const AboutPage = () => {
           transition={{ delay: 0.2 }}
           className="mb-12"
         >
-          <h2 className="text-3xl font-bold mb-4 text-gray-900">Our Vision</h2>
-          <p className="text-lg text-gray-600 leading-relaxed">
+          <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Vision</h2>
+          <p className="text-lg text-gray-800 leading-relaxed">
             To become a leading AI & DeepTech talent ecosystem, shaping innovators, professionals, and technology leaders globally.
           </p>
         </motion.section>
@@ -1060,8 +1254,8 @@ const AboutPage = () => {
           transition={{ delay: 0.3 }}
           className="mb-12"
         >
-          <h2 className="text-3xl font-bold mb-4 text-gray-900">Our Mission</h2>
-          <ul className="space-y-3 text-lg text-gray-600">
+          <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Mission</h2>
+          <ul className="space-y-3 text-lg text-gray-800">
             <li className="flex items-start">
               <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
               Bridge academia and industry with practical, outcome-focused learning
@@ -1082,33 +1276,7 @@ const AboutPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Leadership</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Krishna Kanth T R</h3>
-              <p className="text-blue-600 font-medium mb-3">Director - Strategy & Growth</p>
-              <a
-                href="https://www.linkedin.com/in/krishna-kanth-t-r/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline text-sm"
-              >
-                LinkedIn Profile →
-              </a>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-gray-900">Jagadish Gadi Reddy</h3>
-              <p className="text-blue-600 font-medium mb-3">Director - Academics & Delivery</p>
-              <a
-                href="https://www.linkedin.com/in/jagadishgadireddy/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline text-sm"
-              >
-                LinkedIn Profile →
-              </a>
-            </div>
-          </div>
+         
         </motion.section>
       </div>
     </div>
@@ -1194,10 +1362,10 @@ const FAQsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Frequently Asked Questions
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-800">
             Find answers to common questions about our programs
           </p>
         </motion.div>
@@ -1210,7 +1378,7 @@ const FAQsPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: sectionIndex * 0.1 }}
             >
-              <h2 className="text-2xl font-bold mb-4 text-gray-900">{section.category}</h2>
+              <h2 className="text-2xl font-bold mb-4 text-blue-900">{section.category}</h2>
               <div className="space-y-3">
                 {section.questions.map((faq, faqIndex) => {
                   const globalIndex = `${sectionIndex}-${faqIndex}`;
@@ -1240,7 +1408,7 @@ const FAQsPage = () => {
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <div className="px-6 pb-4 text-gray-600">
+                            <div className="px-6 pb-4 text-gray-800">
                               {faq.a}
                             </div>
                           </motion.div>
@@ -1292,10 +1460,10 @@ const ContactPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Contact Us
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-800">
             We're here to help you start your learning journey
           </p>
         </motion.div>
@@ -1307,8 +1475,8 @@ const ContactPage = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">Get in Touch</h2>
-            <p className="text-gray-600 mb-8">
+            <h2 className="text-2xl font-bold mb-6 text-blue-900">Get in Touch</h2>
+            <p className="text-gray-800 mb-8">
               Whether you're exploring our programs, seeking clarity about the learning journey, or looking for personalized recommendations, our team is always here to help.
             </p>
 
@@ -1323,7 +1491,7 @@ const ContactPage = () => {
                     href="tel:+919966357297"
                     className="text-blue-600 hover:underline"
                   >
-                    +91-9966357297
+                    +91-7386527858
                   </a>
                 </div>
               </div>
@@ -1349,14 +1517,14 @@ const ContactPage = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
-                  <p className="text-gray-600">KPHB, Hyderabad</p>
+                  <p className="text-gray-800">KPHB, Hyderabad</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl">
               <h3 className="font-semibold text-gray-900 mb-2">Quick Enquiry</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Need immediate assistance? Click below to open our enquiry form.
               </p>
               <button
@@ -1375,97 +1543,143 @@ const ContactPage = () => {
             transition={{ delay: 0.3 }}
             className="bg-gray-50 rounded-2xl p-8"
           >
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">Send us a Message</h2>
+            <h2 className="text-2xl font-bold mb-6 text-blue-900">Send us a Message</h2>
 
             
-              <form action="https://formspree.io/f/mzdpzzql"
+             <form action="https://formspree.io/f/xanogwrj"
                    method="POST"
                     className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    placeholder="Your full name"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                placeholder="Your name"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                      name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    placeholder="your@email.com"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                placeholder="your@email.com"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone *
+              </label>
+              <input
+                type="tel"
+                id="phone"
                       name="phone"
-                    required
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    placeholder="+91-XXXXXXXXXX"
-                  />
-                </div>
+                required
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                placeholder="+91-XXXXXXXXXX"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Program Interest
-                  </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Course Interested In
+              </label>
+              <select
+                id="program"
+                name="program"
+                value={formData.program}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              >
+                <option value="">Select a course</option>
+                <option value="Data Science Course">Data Science Course</option>
+                <option value="Cyber Security Course">Cyber Security Course</option>
+                <option value="Python Course Course">Python Course</option>
+                <option value="Java Full Stack Course">Java Full Stack Course</option>
+                <option value="DevOps course">DevOps course</option>
+                <option value="Generative AI Course">Generative AI Course</option>
+              </select>
+
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preferred Contact Method
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
                   <input
-                    type="text"
-                    id="program"
-                    name="program"
-                    value={formData.program}
+                    type="radio"
+                    value="Whatsapp"
+                     id="contactMethod"
+                      name="contactMethod"
+                    checked={formData.contactMethod === 'Whatsapp'}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    placeholder="Which program are you interested in?"
+                    className="mr-2"
                   />
-                </div>
+                  Whatsapp
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="phone"
+                    id="contactMethod"
+                      name="contactMethod"
+                    checked={formData.contactMethod === 'phone'}
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  Phone Call
+                </label>
+              </div>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                  id="message"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Message
+              </label>
+              <textarea
+              id="message"
                     name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
-                    placeholder="Tell us about your learning goals..."
-                  />
-                </div>
+                value={formData.message}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+                placeholder="Tell us about your goals..."
+              />
+            </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  Send Message
-                </button>
-              </form>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Submit Enquiry
+            </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              Or email us directly at{' '}
+              <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
+                info@salientlearnings.com
+              </a>
+            </p>
+          </form>
             
           </motion.div>
         </div>
@@ -1476,6 +1690,53 @@ const ContactPage = () => {
 
 // Home Page
 const HomePage = () => {
+  const { openEnquiry, enquiryOpen } = useApp(); // get openEnquiry and enquiryOpen from context
+
+  // The brochure file/url you want to protect behind the form:
+  const BROCHURE_URL = '/DSAI_Generic_Brochure.pdf';
+
+  // helper to programmatically download a file (works for same-origin or direct links)
+  const triggerDownload = (url) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  // Called when the "Download Full Curriculum" button is clicked
+  const handleDownloadClick = () => {
+    // store intent
+    sessionStorage.setItem('pendingDownloadUrl', BROCHURE_URL);
+
+    // open the SAME enquiry form
+    openEnquiry({ downloadRequest: true });
+  };
+
+  // When EnquiryModal successfully submits the form it should dispatch:
+  // window.dispatchEvent(new CustomEvent('enquiry-submitted', { detail: { success: true } }))
+  // ✅ ONLY listens for SUCCESSFUL SUBMISSION
+  useEffect(() => {
+    const onSubmitSuccess = () => {
+      const pending = sessionStorage.getItem('pendingDownloadUrl');
+      if (!pending) return;
+
+      triggerDownload(pending);
+      sessionStorage.removeItem('pendingDownloadUrl');
+    };
+
+    window.addEventListener('enquiry-submitted-success', onSubmitSuccess);
+    return () =>
+      window.removeEventListener('enquiry-submitted-success', onSubmitSuccess);
+  }, []);
+
+  // Fallback: if enquiry modal closes and there is a pending download, trigger it.
+  // This fallback exists in case EnquiryModal does NOT dispatch 'enquiry-submitted'.
+  // Note: this will also fire if the modal was closed without submission. That's why
+  // the recommended approach is to make EnquiryModal dispatch the custom event on submit.
+ 
+
   return (
     <div>
       <Hero />
@@ -1490,10 +1751,10 @@ const HomePage = () => {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
               Featured Program
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-800">
               Our comprehensive Data Science & AI certification program
             </p>
           </motion.div>
@@ -1517,33 +1778,33 @@ const HomePage = () => {
                   Data Science & AI Certification
                 </h3>
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-start text-gray-600">
+                  <li className="flex items-start text-gray-800">
                     <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Complete pipeline: Analytics → ML → DL → GenAI
                   </li>
-                  <li className="flex items-start text-gray-600">
+                  <li className="flex items-start text-gray-800">
                     <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Build real projects including an AI Chatbot
                   </li>
-                  <li className="flex items-start text-gray-600">
+                  <li className="flex items-start text-gray-800">
                     <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Job-oriented outcomes with placement support
                   </li>
-                  <li className="flex items-start text-gray-600">
+                  <li className="flex items-start text-gray-800">
                     <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Mentor-led learning with industry practitioners
                   </li>
                 </ul>
-                <a href = "/DSAI_Generic_Brochure.pdf" download>
+
+                {/* IMPORTANT: don't put direct <a download> here — use the enquiry flow */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {}}
+                  onClick={handleDownloadClick}
                   className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full"
                 >
                   Download Full Curriculum
                 </motion.button>
-                </a>
               </div>
             </div>
           </motion.div>
@@ -1559,10 +1820,10 @@ const HomePage = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
               The Salient Learning Experience
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-800 max-w-3xl mx-auto">
               Maximizing engagement through personalized guidance and practical application
             </p>
           </motion.div>
@@ -1586,7 +1847,7 @@ const HomePage = () => {
               },
               {
                 title: 'Placement Support',
-                description: 'Career guidance, interview prep, and access to hiring opportunities',
+                description: 'Career guidance, interview prep, and access to placement assistance',
                 icon: <Briefcase className="w-12 h-12" />
               }
             ].map((feature, index) => (
@@ -1601,7 +1862,7 @@ const HomePage = () => {
                 <div className="text-blue-600 mr-4">{feature.icon}</div>
                 <div>
                   <h3 className="text-xl font-bold mb-2 text-gray-900">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-gray-800">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -1632,7 +1893,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Programs</h4>
+            <h4 className="font-semibold mb-4">Courses</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
@@ -1684,7 +1945,7 @@ const Footer = () => {
               <li className="flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
                 <a href="tel:+919966357297" className="hover:text-white transition-colors">
-                  +91-9966357297
+                  +91-7386527858
                 </a>
               </li>
               <li className="flex items-center">
@@ -1715,36 +1976,39 @@ const App = () => {
   const [enquiryOpen, setEnquiryOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
-// Admin state
-const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  // NEW: selected course detail for CourseDetailModal (lifted state)
+  const [selectedCourseDetail, setSelectedCourseDetail] = useState(null);
 
-// Courses state - loads from database
-const [courses, setCourses] = useState([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
+  // Admin state
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
-// Load courses from database on mount
-useEffect(() => {
-  loadCourses();
-  testConnection(); // Test Supabase connection
-}, []);
+  // Courses state - loads from database
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const loadCourses = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    const data = await fetchCourses();
-    setCourses(data);
-    console.log('📚 Loaded courses from database:', data.length);
-  } catch (err) {
-    console.error('Error loading courses:', err);
-    setError('Failed to load courses. Please check your database connection.');
-    // Fallback to mock data if database fails
-    setCourses(mockCourses);
-  } finally {
-    setLoading(false);
-  }
-};
+  // Load courses from database on mount
+  useEffect(() => {
+    loadCourses();
+    testConnection(); // Test Supabase connection
+  }, []);
+
+  const loadCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchCourses();
+      setCourses(data);
+      console.log('📚 Loaded courses from database:', data.length);
+    } catch (err) {
+      console.error('Error loading courses:', err);
+      setError('Failed to load courses. Please check your database connection.');
+      // Fallback to mock data if database fails
+      setCourses(mockCourses);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const openEnquiry = (course = null) => {
     setSelectedCourse(course);
@@ -1770,42 +2034,42 @@ const loadCourses = async () => {
     window.history.pushState({}, "", "/");
   };
 
-const addCourse = async (course) => {
-  try {
-    const newCourse = await createCourse(course);
-    setCourses([newCourse, ...courses]);
-    console.log('✅ Course added to database');
-    return newCourse;
-  } catch (err) {
-    console.error('Error adding course:', err);
-    throw err;
-  }
-};
+  const addCourse = async (course) => {
+    try {
+      const newCourse = await createCourse(course);
+      setCourses([newCourse, ...courses]);
+      console.log('✅ Course added to database');
+      return newCourse;
+    } catch (err) {
+      console.error('Error adding course:', err);
+      throw err;
+    }
+  };
 
-const updateCourse = async (updatedCourse) => {
-  try {
-    const updated = await updateCourseDB(updatedCourse.id, updatedCourse);
-    setCourses(courses.map(course => 
-      course.id === updatedCourse.id ? updated : course
-    ));
-    console.log('✅ Course updated in database');
-    return updated;
-  } catch (err) {
-    console.error('Error updating course:', err);
-    throw err;
-  }
-};
+  const updateCourse = async (updatedCourse) => {
+    try {
+      const updated = await updateCourseDB(updatedCourse.id, updatedCourse);
+      setCourses(courses.map(course => 
+        course.id === updatedCourse.id ? updated : course
+      ));
+      console.log('✅ Course updated in database');
+      return updated;
+    } catch (err) {
+      console.error('Error updating course:', err);
+      throw err;
+    }
+  };
 
-const deleteCourse = async (courseId) => {
-  try {
-    await deleteCourseDB(courseId);
-    setCourses(courses.filter(course => course.id !== courseId));
-    console.log('✅ Course deleted from database');
-  } catch (err) {
-    console.error('Error deleting course:', err);
-    throw err;
-  }
-};
+  const deleteCourse = async (courseId) => {
+    try {
+      await deleteCourseDB(courseId);
+      setCourses(courses.filter(course => course.id !== courseId));
+      console.log('✅ Course deleted from database');
+    } catch (err) {
+      console.error('Error deleting course:', err);
+      throw err;
+    }
+  };
 
   /**
    * Central navigation helper.
@@ -1895,44 +2159,47 @@ const deleteCourse = async (courseId) => {
     // we keep the 'admin' login page available.
   }, [currentPage, isAdminAuthenticated]);
 
- const contextValue = {
-  currentPage,
-  setCurrentPage,
-  enquiryOpen,
-  openEnquiry,
-  closeEnquiry,
-  selectedCourse,
-  setSelectedCourse,
-  courses,
-  addCourse,
-  updateCourse,
-  deleteCourse,
-  loading,        // ADD
-  error,          // ADD
-  loadCourses     // ADD
-};
+  const contextValue = {
+    currentPage,
+    setCurrentPage,
+    enquiryOpen,
+    openEnquiry,
+    closeEnquiry,
+    selectedCourse,
+    setSelectedCourse,
+    // NEW: expose selectedCourseDetail state so Header can set it
+    selectedCourseDetail,
+    setSelectedCourseDetail,
+    courses,
+    addCourse,
+    updateCourse,
+    deleteCourse,
+    loading,
+    error,
+    loadCourses
+  };
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="min-h-screen bg-white">
 
         {/* ADD THIS LOADING STATE */}
-      {loading && (
-        <div className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Loading courses...</p>
+        {loading && (
+          <div className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-800 font-medium">Loading courses...</p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ADD THIS ERROR STATE */}
-      {error && !loading && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md">
-          <p className="font-medium mb-2">⚠️ Database Error</p>
-          <p className="text-sm">{error}</p>
-        </div>
-      )}
+        {/* ADD THIS ERROR STATE */}
+        {error && !loading && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md">
+            <p className="font-medium mb-2">⚠️ Database Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
         {/* Show header only if not on admin pages */}
         {currentPage !== "admin" &&
           currentPage !== "admin-dashboard" && <Header />}
@@ -1940,7 +2207,13 @@ const deleteCourse = async (courseId) => {
         <main>
           <AnimatePresence mode="wait">
             {currentPage === "home" && <HomePage key="home" />}
-            {currentPage === "courses" && <CoursesPage key="courses" />}
+            {currentPage === "courses" && (
+              <CoursesPage
+                selectedCourseDetail={selectedCourseDetail}
+                setSelectedCourseDetail={setSelectedCourseDetail}
+                key="courses"
+              />
+            )}
             {currentPage === "about" && <AboutPage key="about" />}
             {currentPage === "faqs" && <FAQsPage key="faqs" />}
             {currentPage === "contact" && <ContactPage key="contact" />}
@@ -2011,8 +2284,8 @@ const AdminLogin = ({ onLogin }) => {
           <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Admin Access</h2>
-          <p className="text-gray-600">Enter your PIN to access the admin panel</p>
+          <h2 className="text-3xl font-bold text-blue-900 mb-2">Admin Access</h2>
+          <p className="text-gray-800">Enter your PIN to access the admin panel</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -2516,8 +2789,8 @@ const AdminDashboard = ({ onLogout }) => {
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage courses and content</p>
+              <h1 className="text-3xl font-bold text-blue-900 mb-2">Admin Dashboard</h1>
+              <p className="text-gray-800">Manage courses and content</p>
             </div>
             <button
               onClick={onLogout}
@@ -2532,25 +2805,25 @@ const AdminDashboard = ({ onLogout }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="text-3xl font-bold text-blue-600 mb-2">{courses.length}</div>
-            <div className="text-gray-600">Total Courses</div>
+            <div className="text-gray-800">Total Courses</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="text-3xl font-bold text-green-600 mb-2">
               {courses.filter(c => c.status === 'Enrolling Now').length}
             </div>
-            <div className="text-gray-600">Active Courses</div>
+            <div className="text-gray-800">Active Courses</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="text-3xl font-bold text-yellow-600 mb-2">
               {courses.filter(c => c.status === 'Launching Soon').length}
             </div>
-            <div className="text-gray-600">Coming Soon</div>
+            <div className="text-gray-800">Coming Soon</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="text-3xl font-bold text-purple-600 mb-2">
               {courses.filter(c => c.status === 'Planned').length}
             </div>
-            <div className="text-gray-600">Planned</div>
+            <div className="text-gray-800">Planned</div>
           </div>
         </div>
 
@@ -2584,7 +2857,7 @@ const AdminDashboard = ({ onLogout }) => {
         {!showForm && (
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">All Courses</h2>
+              <h2 className="text-xl font-bold text-blue-900">All Courses</h2>
             </div>
             
             <div className="overflow-x-auto">
@@ -2692,7 +2965,7 @@ const AdminDashboard = ({ onLogout }) => {
                     <X className="w-8 h-8 text-red-600" />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Course?</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-800 mb-6">
                     Are you sure you want to delete "<strong>{deleteConfirm.title}</strong>"? This action cannot be undone.
                   </p>
                   <div className="flex gap-4">
