@@ -863,7 +863,7 @@ const [submitted, setSubmitted] = useState(false);
   e.preventDefault();
 
   try {
-    const response = await fetch("https://formspree.io/f/xanogwrj", {
+    const response = await fetch("https://formspree.io/f/mzdpzzql", {
       method: "POST",
       headers: {
         "Accept": "application/json",
@@ -1545,8 +1545,9 @@ const ContactPage = () => {
           >
             <h2 className="text-2xl font-bold mb-6 text-blue-900">Send us a Message</h2>
 
-            
-             <form action="https://formspree.io/f/xanogwrj"
+
+
+             <form action="https://formspree.io/f/mzdpzzql"
                    method="POST"
                     className="space-y-6">
             <div>
