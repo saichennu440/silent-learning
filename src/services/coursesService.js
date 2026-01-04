@@ -18,7 +18,6 @@ export const fetchCourses = async () => {
 
     console.log('✅ Fetched courses:', data.length);
 
-    // 🔴 IMPORTANT FIX
     return data.map(convertToCamelCase);
   } catch (error) {
     console.error('❌ Error fetching courses:', error);
@@ -78,26 +77,29 @@ export const createCourse = async (courseData) => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-const dbData = {
-  slug,
-  title: courseData.title,
-  category: courseData.category,
-  level: courseData.level,
-  // save full array to jsonb
-  durations: Array.isArray(courseData.durations) ? courseData.durations : [],
-  // legacy single fields for compatibility
-  duration: courseData.durations && courseData.durations.length ? courseData.durations[0].label : courseData.duration || '',
-  price_text: courseData.durations && courseData.durations.length ? courseData.durations[0].priceText : courseData.priceText || '',
-  status: courseData.status,
-  short_description: courseData.shortDescription,
-  full_description: courseData.fullDescription,
-  curriculum: courseData.curriculum,
-  projects: courseData.projects,
-  tools: courseData.tools,
-  outcomes: courseData.outcomes,
-  image: courseData.image
-};
-
+    const dbData = {
+      slug,
+      title: courseData.title,
+      category: courseData.category,
+      level: courseData.level,
+      // Save full array to jsonb
+      durations: Array.isArray(courseData.durations) ? courseData.durations : [],
+      // Legacy single fields for compatibility
+      duration: courseData.durations && courseData.durations.length 
+        ? courseData.durations[0].label 
+        : courseData.duration || '',
+      price_text: courseData.durations && courseData.durations.length 
+        ? courseData.durations[0].priceText 
+        : courseData.priceText || '',
+      status: courseData.status,
+      short_description: courseData.shortDescription,
+      full_description: courseData.fullDescription,
+      curriculum: courseData.curriculum,
+      projects: courseData.projects,
+      tools: courseData.tools,
+      outcomes: courseData.outcomes,
+      image: courseData.image
+    };
 
     const { data, error } = await supabase
       .from('courses')
@@ -122,22 +124,27 @@ const dbData = {
 export const updateCourse = async (id, courseData) => {
   try {
     const dbData = {
-  title: courseData.title,
-  category: courseData.category,
-  level: courseData.level,
-  durations: Array.isArray(courseData.durations) ? courseData.durations : [],
-  duration: courseData.durations && courseData.durations.length ? courseData.durations[0].label : courseData.duration || '',
-  price_text: courseData.durations && courseData.durations.length ? courseData.durations[0].priceText : courseData.priceText || '',
-  status: courseData.status,
-  short_description: courseData.shortDescription,
-  full_description: courseData.fullDescription,
-  curriculum: courseData.curriculum,
-  projects: courseData.projects,
-  tools: courseData.tools,
-  outcomes: courseData.outcomes,
-  image: courseData.image
-};
-
+      title: courseData.title,
+      category: courseData.category,
+      level: courseData.level,
+      // Save full array to jsonb
+      durations: Array.isArray(courseData.durations) ? courseData.durations : [],
+      // Legacy single fields for compatibility
+      duration: courseData.durations && courseData.durations.length 
+        ? courseData.durations[0].label 
+        : courseData.duration || '',
+      price_text: courseData.durations && courseData.durations.length 
+        ? courseData.durations[0].priceText 
+        : courseData.priceText || '',
+      status: courseData.status,
+      short_description: courseData.shortDescription,
+      full_description: courseData.fullDescription,
+      curriculum: courseData.curriculum,
+      projects: courseData.projects,
+      tools: courseData.tools,
+      outcomes: courseData.outcomes,
+      image: courseData.image
+    };
 
     const { data, error } = await supabase
       .from('courses')
@@ -219,8 +226,20 @@ export const filterCoursesByCategory = async (category) => {
 
 /* =====================================================
    HELPER: DB → FRONTEND FIELD MAPPING
+   🔴 FIXED: Added durations field
 ===================================================== */
 const convertToCamelCase = (dbCourse) => {
+  // Parse durations if it's a string (JSONB comes as object/array, but just in case)
+  let durations = dbCourse.durations;
+  if (typeof durations === 'string') {
+    try {
+      durations = JSON.parse(durations);
+    } catch (e) {
+      console.error('Failed to parse durations:', e);
+      durations = [];
+    }
+  }
+
   return {
     id: dbCourse.id,
     slug: dbCourse.slug,
@@ -229,6 +248,8 @@ const convertToCamelCase = (dbCourse) => {
     level: dbCourse.level,
     duration: dbCourse.duration,
     priceText: dbCourse.price_text,
+    // 🔴 CRITICAL FIX: Include durations array
+    durations: durations || [],
     status: dbCourse.status,
     shortDescription: dbCourse.short_description,
     fullDescription: dbCourse.full_description,

@@ -1342,7 +1342,7 @@ const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Explore Our Programs
           </h1>
-          <p className="text-xl text-gray-800 max-w-3xl mx-auto whitespace-nowrap text-ellipsis">
+          <p className="text-xl text-gray-800 max-w-3xl mx-auto lg:whitespace-nowrap">
             Choose from our comprehensive range of AI and Data Science programs designed for every skill level
           </p>
         </motion.div>
