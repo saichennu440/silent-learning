@@ -211,7 +211,7 @@ const Header = () => {
 
   const navItems = [
     { label: 'Home', page: 'home' },
-    { label: 'Courses', page: 'courses' },
+    { label: 'Technologies', page: 'courses' },
     { label: 'About', page: 'about' },
     { label: 'FAQs', page: 'faqs' },
     { label: 'Contact', page: 'contact' },
@@ -608,6 +608,31 @@ const WhySalient = () => {
 
 // Course Card Component
 const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  // Normalize durations for robustness:
+  // - If course.durations is an array of strings, convert to { label, priceText }
+  // - If missing, fallback to legacy fields (course.duration / course.priceText)
+  const durations = React.useMemo(() => {
+    if (!course) return [];
+    if (Array.isArray(course.durations) && course.durations.length > 0) {
+      return course.durations.map((d) =>
+        typeof d === 'string'
+          ? { label: d, priceText: course.priceText || '' }
+          : { label: d.label || '', priceText: d.priceText || '' }
+      );
+    }
+    // fallback single option
+    return [{ label: course.duration || '', priceText: course.priceText || '' }];
+  }, [course]);
+
+  // Reset selected index when course changes
+  useEffect(() => {
+    setSelectedIdx(0);
+  }, [course?.id]);
+
+  const current = durations[selectedIdx] || { label: course?.duration || '', priceText: course?.priceText || '' };
+
   const statusColors = {
     'Enrolling Now': 'bg-green-100 text-green-800',
     'Launching Soon': 'bg-blue-100 text-blue-800',
@@ -626,46 +651,77 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={course.image}
-          alt={course.title}
+          src={course?.image}
+          alt={course?.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[course.status] || 'bg-gray-100 text-gray-800'}`}>
-            {course.status}
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              statusColors[course?.status] || 'bg-gray-100 text-gray-800'
+            }`}
+          >
+            {course?.status}
           </span>
         </div>
       </div>
-      
+
       <div className="p-6">
         <div className="mb-3">
           <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-            {course.category}
+            {course?.category}
           </span>
         </div>
-        
-        <h3 className="text-xl font-bold mb-2 text-gray-900">{course.title}</h3>
-        <p className="text-gray-800 mb-4 line-clamp-2">{course.shortDescription}</p>
-        
-        <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500">
+
+        <h3 className="text-xl font-bold mb-2 text-gray-900">{course?.title}</h3>
+        <p className="text-gray-800 mb-4 line-clamp-2">{course?.shortDescription}</p>
+
+        <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500 items-center">
           <span className="flex items-center">
-            <Award className="w-4 h-4 mr-1" /> {course.level}
+            <Award className="w-4 h-4 mr-1" /> {course?.level}
           </span>
+
           <span>•</span>
-          <span>{course.duration}</span>
+
+          {/* Duration display / selector */}
+          {durations.length > 1 ? (
+            <div className="flex items-center gap-2">
+              <select
+                aria-label="Select duration"
+                value={selectedIdx}
+                onChange={(e) => setSelectedIdx(Number(e.target.value))}
+                className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+              >
+                {durations.map((d, idx) => (
+                  <option key={idx} value={idx}>
+                    {d.label || `Option ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <span>{current.label || '—'}</span>
+          )}
+
           <span>•</span>
-          <span className="font-semibold text-blue-600">{course.priceText}</span>
+
+          <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
         </div>
-        
+
         <div className="flex gap-3">
           <button
-            onClick={() => onLearnMore(course)}
+            onClick={() => {
+              // pass selected duration index as second arg (backwards-compatible)
+              if (typeof onLearnMore === 'function') onLearnMore(course, selectedIdx);
+            }}
             className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
             Learn More
           </button>
           <button
-            onClick={() => onEnquiry(course)}
+            onClick={() => {
+              if (typeof onEnquiry === 'function') onEnquiry(course, selectedIdx);
+            }}
             className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
           >
             Enquiry
@@ -676,9 +732,28 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
   );
 };
 
+
+// Course Detail Modal
 // Course Detail Modal
 const CourseDetailModal = ({ course, onClose }) => {
   if (!course) return null;
+
+  // show duration options, default to first
+  const [selectedDurationIndex, setSelectedDurationIndex] = useState(0);
+
+  useEffect(() => {
+    // reset selection when course changes
+    setSelectedDurationIndex(0);
+  }, [course]);
+
+  // helper to safely read price
+  const currentDuration =
+    course?.durations && course.durations.length > 0
+      ? course.durations[selectedDurationIndex]
+      : null;
+
+  const displayedDuration = currentDuration?.label || course?.duration || '—';
+  const displayedPrice = currentDuration?.priceText || course?.priceText || '—';
 
   return (
     <motion.div
@@ -716,15 +791,35 @@ const CourseDetailModal = ({ course, onClose }) => {
               {course.category}
             </span>
           </div>
-          
+
           <h2 className="text-3xl font-bold mb-4 text-blue-900">{course.title}</h2>
-          
-          <div className="flex flex-wrap gap-4 mb-6 text-sm">
+
+          <div className="flex flex-wrap gap-4 mb-6 text-sm items-center">
             <span className="flex items-center text-gray-800">
               <Award className="w-5 h-5 mr-2 text-blue-600" /> {course.level}
             </span>
-            <span className="text-gray-800">{course.duration}</span>
-            <span className="font-semibold text-blue-600">{course.priceText}</span>
+
+            {/* Duration selector */}
+            {course.durations && course.durations.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Duration:</label>
+                <select
+                  value={selectedDurationIndex}
+                  onChange={(e) => setSelectedDurationIndex(Number(e.target.value))}
+                  className="px-3 py-1 border border-gray-300 rounded-lg"
+                >
+                  {course.durations.map((d, idx) => (
+                    <option key={idx} value={idx}>
+                      {d.label || `Option ${idx + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <span className="text-gray-800">{displayedDuration}</span>
+            )}
+
+            <span className="text-xl font-bold text-blue-600">₹{displayedPrice}</span>
           </div>
 
           <div className="mb-8">
@@ -812,9 +907,8 @@ const CourseDetailModal = ({ course, onClose }) => {
   );
 };
 
-// Enquiry Modal
+
 const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
-  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -823,84 +917,187 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
     message: '',
     contactMethod: 'Whatsapp',
   });
- // const [submitted, setSubmitted] = useState(false);
-const [submitted, setSubmitted] = useState(false);
+
+  const [submitted, setSubmitted] = useState(false);
+
+  // validation / whatsapp check state
+  const [phoneWarning, setPhoneWarning] = useState(''); // shows if letters were typed
+  const [whatsappStatus, setWhatsappStatus] = useState('unknown'); // 'unknown' | 'checking' | 'available' | 'not_available'
+  const [whatsappNote, setWhatsappNote] = useState(''); // user-facing note
+  const debounceRef = React.useRef(null);
+
   useEffect(() => {
     if (selectedCourse) {
       setFormData(prev => ({ ...prev, program: selectedCourse.title }));
     }
   }, [selectedCourse]);
 
-  // const handleSubmit = async (e: { preventDefault: () => void; }) => {
-  //   e.preventDefault();
-    
-  //   // Mock API call
-  //   console.log('Enquiry submitted:', formData);
-    
-  //   // Show success message
-  //   setSubmitted(true);
-  //   setTimeout(() => {
-  //     setSubmitted(false);
-  //     onClose();
-  //     setFormData({
-  //       name: '',
-  //       email: '',
-  //       phone: '',
-  //       program: '',
-  //       message: '',
-  //       contactMethod: 'email'
-  //     });
-  //   }, 2000);
-  // };
+  // reset minor states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitted(false);
+      setPhoneWarning('');
+      setWhatsappStatus('unknown');
+      setWhatsappNote('');
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Helper: strip non-digit characters
+  const digitsOnly = (value) => (value || '').replace(/\D+/g, '');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Phone input: strip non-digits into state, but detect letters to show warning.
+    if (name === 'phone') {
+      const hasLetters = /[A-Za-z]/.test(value);
+      if (hasLetters) {
+        setPhoneWarning('Only numbers allowed. Letters were removed automatically.');
+      } else {
+        setPhoneWarning('');
+      }
+
+      const cleaned = digitsOnly(value);
+      setFormData(prev => ({ ...prev, phone: cleaned }));
+
+      // reset whatsapp status while user types
+      setWhatsappStatus('unknown');
+      setWhatsappNote('');
+
+      // No button: auto-check after debounce if Whatsapp selected
+      // clear previous timer
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        if (formData.contactMethod === 'Whatsapp' || (name === 'phone' && formData.contactMethod === 'Whatsapp')) {
+          // call checker with the latest cleaned value (use cleaned)
+          autoCheckWhatsapp(cleaned);
+        }
+      }, 700); // 700ms debounce
+
+      return;
+    }
+
+    // Contact method change: if changed to Whatsapp and phone present, auto-check
+    if (name === 'contactMethod') {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      setWhatsappStatus('unknown');
+      setWhatsappNote('');
+
+      if (value === 'Whatsapp' && formData.phone) {
+        // debounce a tiny bit to avoid race
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          autoCheckWhatsapp(formData.phone);
+        }, 350);
+      }
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Auto-check function (tries server-side endpoint first, falls back to heuristic)
+  // const autoCheckWhatsapp = async (phone) => {
+  //   // phone should be digits-only already
+  //   if (!phone || phone.length < 6) {
+  //     setWhatsappStatus('not_available');
+  //     setWhatsappNote('Enter a valid phone number to check WhatsApp.');
+  //     return;
+  //   }
+
+  //   setWhatsappStatus('checking');
+  //   setWhatsappNote('Checking WhatsApp availability...');
+
+  //   // Try a server-side check if you have one. Expected: GET /api/check-whatsapp?phone=... -> { available: true/false }
+  //   try {
+  //     const res = await fetch(`/api/check-whatsapp?phone=${encodeURIComponent(phone)}`, { method: 'GET' });
+  //     if (res.ok) {
+  //       const json = await res.json();
+  //       if (typeof json.available === 'boolean') {
+  //         if (json.available) {
+  //           setWhatsappStatus('available');
+  //           setWhatsappNote('WhatsApp available for this number.');
+  //         } else {
+  //           setWhatsappStatus('not_available');
+  //           setWhatsappNote('WhatsApp not available for this number.');
+  //         }
+  //         return;
+  //       }
+  //       // unexpected shape -> fallthrough to heuristic
+  //     }
+  //   } catch (err) {
+  //     // no server endpoint or network error -> fallback to heuristic
+  //   }
+
+  //   // Heuristic fallback (best-effort): consider >=10 digits as likely available
+  //   if (phone.length >= 10) {
+  //     setWhatsappStatus('available');
+  //     setWhatsappNote('WhatsApp likely available (heuristic).');
+  //   } else {
+  //     setWhatsappStatus('not_available');
+  //     setWhatsappNote('WhatsApp likely not available for this number (heuristic).');
+  //   }
+  // };
+
+  // Final submit
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const response = await fetch("https://formspree.io/f/mzdpzzql", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
+    // Phone must be digits-only and non-empty
+    if (!/^\d+$/.test(formData.phone) || formData.phone.length < 6) {
+      setPhoneWarning('Please enter a valid phone number (digits only).');
+      return;
+    }
 
-    if (response.ok) {
-      // ✅ ONLY NOW trigger download
-      setSubmitted(true);
-      window.dispatchEvent(
-        new CustomEvent("enquiry-submitted-success")
-      );
+    try {
+      const payload = { ...formData };
+      if (formData.contactMethod === 'Whatsapp') payload.whatsappCheck = whatsappStatus;
 
-      
+      const response = await fetch("https://formspree.io/f/mzdpzzql", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setTimeout(() => {
-    setSubmitted(false);
-    onClose();
+      if (response.ok) {
+        setSubmitted(true);
+        window.dispatchEvent(new CustomEvent("enquiry-submitted-success"));
 
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      program: "",
-      message: "",
-      contactMethod: "Whatsapp",
-    });
-  }, 2000);
-}
-  } catch (error) {
-    console.error("Enquiry failed", error);
-  }
-};
-
-
+        setTimeout(() => {
+          setSubmitted(false);
+          onClose();
+          setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            program: "",
+            message: "",
+            contactMethod: "Whatsapp",
+          });
+          setPhoneWarning('');
+          setWhatsappStatus('unknown');
+          setWhatsappNote('');
+          if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = null;
+          }
+        }, 2000);
+      } else {
+        console.error("Formspree submit returned non-ok:", response.status);
+      }
+    } catch (error) {
+      console.error("Enquiry failed", error);
+    }
+  };
 
   return (
     <motion.div
@@ -917,172 +1114,161 @@ const [submitted, setSubmitted] = useState(false);
         className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-{submitted && (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    className="mb-6 p-4 bg-green-100 text-green-800 rounded-lg text-center font-medium"
-  >
-    ✅ Enquiry submitted successfully!  
-    <br />
-    Your curriculum download will start shortly.
-  </motion.div>
-)}
-
-
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">Get in Touch</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+        {submitted && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 p-4 bg-green-100 text-green-800 rounded-lg text-center font-medium"
           >
+            ✅ Enquiry submitted successfully!
+            <br />
+            Your curriculum download will start shortly.
+          </motion.div>
+        )}
+
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-2xl font-bold text-gray-900">Get in Touch</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-6 h-6" />
           </button>
         </div>
 
-       
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="Your name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="your@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              required
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="Enter digits only (e.g. 918123456789)"
+            />
+            {phoneWarning && <p className="mt-2 text-sm text-yellow-700">{phoneWarning}</p>}
+
+            {/* show whatsapp status under phone when Whatsapp selected */}
+            {formData.contactMethod === 'Whatsapp' && whatsappStatus !== 'unknown' && (
+              <p className={`mt-2 text-sm ${
+                whatsappStatus === 'available' ? 'text-green-600' : 'text-red-400'
+              }`}>
+                {whatsappNote}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Interested In</label>
+            <select
+              id="program"
+              name="program"
+              value={formData.program}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+            >
+              <option value="">Select a course</option>
+              <option value="Data Science">Data Science</option>
+              <option value="Web Development">Cyber Security</option>
+              <option value="Mobile App Development">Python Course</option>
+              <option value="Generative AI & Prompt Engineering">Java Full Stack Course</option>
+              <option value="AI in Healthcare & Life Sciences">DevOps course</option>
+              <option value="Computer Vision & Autonomous Systems">Generative AI Course</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Contact Method</label>
+            <div className="flex gap-4 items-center">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="Whatsapp"
+                  id="contactMethodWhatsapp"
+                  name="contactMethod"
+                  checked={formData.contactMethod === 'Whatsapp'}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Whatsapp
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="Your name"
-              />
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="phone"
+                  id="contactMethodPhone"
+                  name="contactMethod"
+                  checked={formData.contactMethod === 'phone'}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Phone Call
+              </label>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                      name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="+91-XXXXXXXXXX"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Interested In
-              </label>
-              <select
-                id="program"
-                name="program"
-                value={formData.program}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-              >
-                <option value="">Select a course</option>
-                <option value="Data Science">Data Science</option>
-                <option value="Web Development">Cyber Security</option>
-                <option value="Mobile App Development">Python Course</option>
-                <option value="Generative AI & Prompt Engineering">Java Full Stack Course</option>
-                <option value="AI in Healthcare & Life Sciences">DevOps course</option>
-                <option value="Computer Vision & Autonomous Systems">Generative AI Course</option>
-              </select>
-
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Preferred Contact Method
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="Whatsapp"
-                     id="contactMethod"
-                      name="contactMethod"
-                    checked={formData.contactMethod === 'Whatsapp'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Whatsapp
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="phone"
-                    id="contactMethod"
-                      name="contactMethod"
-                    checked={formData.contactMethod === 'phone'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Phone Call
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Message
-              </label>
-              <textarea
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea
               id="message"
-                    name="message"
-                value={formData.message}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
-                placeholder="Tell us about your goals..."
-              />
-            </div>
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+              placeholder="Tell us about your goals..."
+            />
+          </div>
 
-           <button
-  type="submit"
-  disabled={submitted}
-  className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors
-    ${submitted
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-blue-600 hover:bg-blue-700 text-white"
-    }`}
->
-  {submitted ? "Submitting..." : "Submit Enquiry"}
-</button>
+          <button
+            type="submit"
+            disabled={submitted}
+            className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors
+              ${submitted ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+          >
+            {submitted ? "Submitting..." : "Submit Enquiry"}
+          </button>
 
-
-            <p className="text-xs text-gray-500 text-center">
-              Or email us directly at{' '}
-              <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
-                info@salientlearnings.com
-              </a>
-            </p>
-          </form>
-              </motion.div>
+          <p className="text-xs text-gray-500 text-center">
+            Or email us directly at{' '}
+            <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
+              info@salientlearnings.com
+            </a>
+          </p>
+        </form>
+      </motion.div>
     </motion.div>
   );
 };
+
 
 // Courses Page
 const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
@@ -1876,7 +2062,15 @@ const HomePage = () => {
 
 // Footer Component
 const Footer = () => {
-  const { setCurrentPage } = useApp();
+  const { setCurrentPage, courses, setSelectedCourseDetail } = useApp();
+
+  const handleCourseClick = (course) => {
+    // open courses page and show course detail modal
+    if (setSelectedCourseDetail) setSelectedCourseDetail(course);
+    setCurrentPage('courses');
+    // small scroll for UX
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
+  };
 
   return (
     <footer className="bg-gray-900 text-white py-12 px-4">
@@ -1885,8 +2079,8 @@ const Footer = () => {
           <div>
             <img
               className="w-28 h-18 object-contain mr-2 inline-block"
-              src='./logo.png'
-              alt='Salient Learnings Logo'
+              src="./logo.png"
+              alt="Salient Learnings Logo"
             />
             <p className="text-gray-400">
               Building future-ready talent in AI, Data & Deep Technologies
@@ -1895,27 +2089,44 @@ const Footer = () => {
 
           <div>
             <h4 className="font-semibold mb-4">Courses</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
-                  Data Science & AI
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
-                  Generative AI
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
-                  Industry AI
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
-                  DeepTech
-                </button>
-              </li>
+            <ul className="space-y-2 text-gray-400 max-h-40 overflow-y-auto pr-2">
+              {courses && courses.length > 0 ? (
+                courses.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => handleCourseClick(c)}
+                      className="hover:text-white transition-colors text-left w-full truncate"
+                      title={c.title}
+                    >
+                      {c.title}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                // fallback items if courses not loaded yet
+                <>
+                  <li>
+                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                      Data Science & AI
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                      Generative AI
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                      Industry AI
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                      DeepTech
+                    </button>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -1971,7 +2182,8 @@ const Footer = () => {
   );
 };
 
-// Main App Component
+
+//App Component
 const App = () => {
   const [currentPage, setCurrentPage] = useState("home");
   const [enquiryOpen, setEnquiryOpen] = useState(false);
@@ -1988,29 +2200,268 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load courses from database on mount
-  useEffect(() => {
-    loadCourses();
-    testConnection(); // Test Supabase connection
-  }, []);
+  // ---------- Helper: merge DB data with local cache ----------
+  const mergeDbWithCache = (dbList = []) => {
+    // read local cache
+    let cache = [];
+    try {
+      const raw = localStorage.getItem("courses_cache");
+      if (raw) cache = JSON.parse(raw);
+    } catch (err) {
+      console.warn("Invalid courses_cache in localStorage:", err);
+    }
+    const cacheById = new Map((cache || []).map((c) => [String(c.id), c]));
 
+    // Merge for each DB item: if critical fields are missing in DB,
+    // prefer cached values so UI edits aren't lost on refresh.
+    return dbList.map((item) => {
+      const id = String(item.id ?? "");
+      const cached = cacheById.get(id);
+      if (!cached) return item;
+
+      const merged = { ...item };
+
+      // Preserve durations/pricing if DB misses them
+      if ((!merged.durations || merged.durations.length === 0) && cached.durations) {
+        merged.durations = cached.durations;
+      }
+
+      // Preserve legacy single fields if missing
+      if ((!merged.duration || merged.duration === "") && cached.duration) {
+        merged.duration = cached.duration;
+      }
+      if ((!merged.priceText || merged.priceText === "") && cached.priceText) {
+        merged.priceText = cached.priceText;
+      }
+
+      // Preserve short/full descriptions if DB omits them
+      if ((!merged.shortDescription || merged.shortDescription === "") && cached.shortDescription) {
+        merged.shortDescription = cached.shortDescription;
+      }
+      if ((!merged.fullDescription || merged.fullDescription === "") && cached.fullDescription) {
+        merged.fullDescription = cached.fullDescription;
+      }
+
+      // Preserve title, image, category, level, status if DB omits or empty
+      if ((!merged.title || merged.title === "") && cached.title) {
+        merged.title = cached.title;
+      }
+      if ((!merged.image || merged.image === "") && cached.image) {
+        merged.image = cached.image;
+      }
+      if ((!merged.category || merged.category === "") && cached.category) {
+        merged.category = cached.category;
+      }
+      if ((!merged.level || merged.level === "") && cached.level) {
+        merged.level = cached.level;
+      }
+      if ((!merged.status || merged.status === "") && cached.status) {
+        merged.status = cached.status;
+      }
+
+      // Preserve arrays (curriculum, projects, tools, outcomes)
+      if ((!merged.curriculum || merged.curriculum.length === 0) && cached.curriculum) {
+        merged.curriculum = cached.curriculum;
+      }
+      if ((!merged.projects || merged.projects.length === 0) && cached.projects) {
+        merged.projects = cached.projects;
+      }
+      if ((!merged.tools || merged.tools.length === 0) && cached.tools) {
+        merged.tools = cached.tools;
+      }
+      if ((!merged.outcomes || merged.outcomes.length === 0) && cached.outcomes) {
+        merged.outcomes = cached.outcomes;
+      }
+
+      return merged;
+    });
+  };
+
+  // Load courses from database on mount (updated with localStorage cache fallback)
   const loadCourses = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchCourses();
-      setCourses(data);
-      console.log('📚 Loaded courses from database:', data.length);
+
+      const data = await fetchCourses(); // may throw or return []
+      const parsed = Array.isArray(data) ? data : [];
+
+      // Merge DB results with any local cache so admin edits are not lost if DB doesn't include fields
+      const merged = mergeDbWithCache(parsed);
+
+      setCourses(merged);
+      // Save to localStorage cache for resilience
+      try {
+        localStorage.setItem("courses_cache", JSON.stringify(merged));
+      } catch (err) {
+        console.warn("Could not save courses to localStorage", err);
+      }
+      console.log("📚 Loaded courses from database (merged with cache):", merged.length);
     } catch (err) {
-      console.error('Error loading courses:', err);
-      setError('Failed to load courses. Please check your database connection.');
-      // Fallback to mock data if database fails
-      setCourses(mockCourses);
+      console.error("Error loading courses:", err);
+      setError("Failed to load courses from database. Using local cache or fallback.");
+      // fallback to localStorage cache if DB fails
+      try {
+        const cached = localStorage.getItem("courses_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setCourses(parsed);
+          console.log("📚 Loaded courses from localStorage cache:", parsed.length);
+        } else {
+          // final fallback to mock data (if you have mockCourses defined)
+          if (typeof mockCourses !== "undefined") {
+            setCourses(mockCourses);
+            localStorage.setItem("courses_cache", JSON.stringify(mockCourses));
+            console.log("📚 Using mockCourses fallback.");
+          } else {
+            setCourses([]);
+          }
+        }
+      } catch (cacheErr) {
+        console.error("Error reading courses cache:", cacheErr);
+        setCourses(typeof mockCourses !== "undefined" ? mockCourses : []);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Load courses on mount
+  useEffect(() => {
+    loadCourses();
+    testConnection(); // Test Supabase connection
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---------- Helper: persist full list to localStorage ----------
+  const persistCoursesToCache = (list) => {
+    try {
+      localStorage.setItem("courses_cache", JSON.stringify(list));
+    } catch (err) {
+      console.warn("Could not update courses cache", err);
+    }
+  };
+
+  // Add course (tries DB -> falls back to local)
+  const addCourse = async (course) => {
+    try {
+      const created = await createCourse(course); // may return created object
+      // Combine DB return (if any) with original data to ensure durations preserved
+      const finalCourse = {
+        ...(created || {}),
+        ...course,
+        id: (created && created.id) || course.id || Date.now().toString(),
+      };
+
+      // ensure durations -> legacy fields
+      if (Array.isArray(finalCourse.durations) && finalCourse.durations.length > 0) {
+        finalCourse.duration = finalCourse.duration || finalCourse.durations[0].label || "";
+        finalCourse.priceText = finalCourse.priceText || finalCourse.durations[0].priceText || "";
+      } else {
+        // If DB doesn't have durations but we provided them, ensure finalCourse carries them
+        if (course.durations && course.durations.length > 0) {
+          finalCourse.durations = course.durations;
+          finalCourse.duration = finalCourse.duration || course.durations[0].label || "";
+          finalCourse.priceText = finalCourse.priceText || course.durations[0].priceText || "";
+        }
+      }
+
+      // ensure descriptions preserved from payload or created result
+      finalCourse.shortDescription = finalCourse.shortDescription || course.shortDescription || "";
+      finalCourse.fullDescription = finalCourse.fullDescription || course.fullDescription || "";
+
+      const updated = [finalCourse, ...courses];
+      setCourses(updated);
+      persistCoursesToCache(updated);
+      console.log("✅ Course added to database (or cached locally).");
+      return finalCourse;
+    } catch (err) {
+      console.error("Error adding course to DB:", err);
+      // fallback: persist locally with generated id
+      const fallbackCourse = {
+        ...course,
+        id: course.id || Date.now().toString(),
+        duration:
+          Array.isArray(course.durations) && course.durations.length > 0
+            ? course.durations[0].label
+            : course.duration,
+        priceText:
+          Array.isArray(course.durations) && course.durations.length > 0
+            ? course.durations[0].priceText
+            : course.priceText,
+      };
+      // ensure descriptions are present
+      fallbackCourse.shortDescription = fallbackCourse.shortDescription || course.shortDescription || "";
+      fallbackCourse.fullDescription = fallbackCourse.fullDescription || course.fullDescription || "";
+
+      const updated = [fallbackCourse, ...courses];
+      setCourses(updated);
+      persistCoursesToCache(updated);
+      return fallbackCourse;
+    }
+  };
+
+  // Update course (tries DB -> falls back to local)
+  const updateCourse = async (updatedCourse) => {
+    try {
+      const updatedFromDB = await updateCourseDB(updatedCourse.id, updatedCourse);
+      // Merge DB result with updatedCourse to preserve durations if needed
+      const merged = { ...(updatedFromDB || {}), ...updatedCourse };
+
+      if (Array.isArray(merged.durations) && merged.durations.length > 0) {
+        merged.duration = merged.duration || merged.durations[0].label || "";
+        merged.priceText = merged.priceText || merged.durations[0].priceText || "";
+      } else if (Array.isArray(updatedCourse.durations) && updatedCourse.durations.length > 0) {
+        // ensure durations from the updatedCourse are persisted in cache/UI
+        merged.durations = updatedCourse.durations;
+        merged.duration = merged.duration || updatedCourse.durations[0].label || "";
+        merged.priceText = merged.priceText || updatedCourse.durations[0].priceText || "";
+      }
+
+      // ensure descriptions preserved
+      merged.shortDescription = merged.shortDescription || updatedCourse.shortDescription || "";
+      merged.fullDescription = merged.fullDescription || updatedCourse.fullDescription || "";
+
+      const newList = courses.map((c) => (String(c.id) === String(merged.id) ? merged : c));
+      setCourses(newList);
+      persistCoursesToCache(newList);
+      console.log("✅ Course updated in database (or cached locally).");
+      return merged;
+    } catch (err) {
+      console.error("Error updating course:", err);
+      // fallback: update local cache
+      const merged = { ...updatedCourse };
+      if (Array.isArray(merged.durations) && merged.durations.length > 0) {
+        merged.duration = merged.duration || merged.durations[0].label || "";
+        merged.priceText = merged.priceText || merged.durations[0].priceText || "";
+      }
+      merged.shortDescription = merged.shortDescription || updatedCourse.shortDescription || "";
+      merged.fullDescription = merged.fullDescription || updatedCourse.fullDescription || "";
+      const newList = courses.map((c) => (String(c.id) === String(merged.id) ? merged : c));
+      setCourses(newList);
+      persistCoursesToCache(newList);
+      return merged;
+    }
+  };
+
+  // Delete course (tries DB -> falls back to local)
+  const deleteCourse = async (courseId) => {
+    try {
+      await deleteCourseDB(courseId);
+      const newList = courses.filter((c) => String(c.id) !== String(courseId));
+      setCourses(newList);
+      persistCoursesToCache(newList);
+      console.log("✅ Course deleted from database (or removed from cache).");
+    } catch (err) {
+      console.error("Error deleting course from DB:", err);
+      // fallback: remove locally
+      const newList = courses.filter((c) => String(c.id) !== String(courseId));
+      setCourses(newList);
+      persistCoursesToCache(newList);
+    }
+  };
+
+  // Enquiry helpers
   const openEnquiry = (course = null) => {
     setSelectedCourse(course);
     setEnquiryOpen(true);
@@ -2035,43 +2486,6 @@ const App = () => {
     window.history.pushState({}, "", "/");
   };
 
-  const addCourse = async (course) => {
-    try {
-      const newCourse = await createCourse(course);
-      setCourses([newCourse, ...courses]);
-      console.log('✅ Course added to database');
-      return newCourse;
-    } catch (err) {
-      console.error('Error adding course:', err);
-      throw err;
-    }
-  };
-
-  const updateCourse = async (updatedCourse) => {
-    try {
-      const updated = await updateCourseDB(updatedCourse.id, updatedCourse);
-      setCourses(courses.map(course => 
-        course.id === updatedCourse.id ? updated : course
-      ));
-      console.log('✅ Course updated in database');
-      return updated;
-    } catch (err) {
-      console.error('Error updating course:', err);
-      throw err;
-    }
-  };
-
-  const deleteCourse = async (courseId) => {
-    try {
-      await deleteCourseDB(courseId);
-      setCourses(courses.filter(course => course.id !== courseId));
-      console.log('✅ Course deleted from database');
-    } catch (err) {
-      console.error('Error deleting course:', err);
-      throw err;
-    }
-  };
-
   /**
    * Central navigation helper.
    * Accepts either a page name like 'home' or a path like '/admin'.
@@ -2082,23 +2496,13 @@ const App = () => {
       if (!routeOrPath) return;
 
       // normalize: if starts with '/', remove it
-      let route = routeOrPath.startsWith("/")
-        ? routeOrPath.slice(1)
-        : routeOrPath;
+      let route = routeOrPath.startsWith("/") ? routeOrPath.slice(1) : routeOrPath;
 
       // map empty route or root to 'home'
       if (route === "" || route === "/") route = "home";
 
       // allow visitors to use routes like '/admin' or '/courses'
-      const validPages = [
-        "home",
-        "courses",
-        "about",
-        "faqs",
-        "contact",
-        "admin",
-        "admin-dashboard",
-      ];
+      const validPages = ["home", "courses", "about", "faqs", "contact", "admin", "admin-dashboard"];
 
       if (!validPages.includes(route)) {
         // fallback to home if unknown
@@ -2177,13 +2581,12 @@ const App = () => {
     deleteCourse,
     loading,
     error,
-    loadCourses
+    loadCourses,
   };
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="min-h-screen bg-white">
-
         {/* ADD THIS LOADING STATE */}
         {loading && (
           <div className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center">
@@ -2201,9 +2604,9 @@ const App = () => {
             <p className="text-sm">{error}</p>
           </div>
         )}
+
         {/* Show header only if not on admin pages */}
-        {currentPage !== "admin" &&
-          currentPage !== "admin-dashboard" && <Header />}
+        {currentPage !== "admin" && currentPage !== "admin-dashboard" && <Header />}
 
         <main>
           <AnimatePresence mode="wait">
@@ -2236,17 +2639,11 @@ const App = () => {
         </main>
 
         {/* Show footer only if not on admin pages */}
-        {currentPage !== "admin" && currentPage !== "admin-dashboard" && (
-          <Footer />
-        )}
+        {currentPage !== "admin" && currentPage !== "admin-dashboard" && <Footer />}
 
         <AnimatePresence>
           {enquiryOpen && (
-            <EnquiryModal
-              isOpen={enquiryOpen}
-              onClose={closeEnquiry}
-              selectedCourse={selectedCourse}
-            />
+            <EnquiryModal isOpen={enquiryOpen} onClose={closeEnquiry} selectedCourse={selectedCourse} />
           )}
         </AnimatePresence>
       </div>
@@ -2255,6 +2652,8 @@ const App = () => {
 };
 
 export default App;
+
+
 
 // ==================== ADMIN COMPONENTS START ====================
 
@@ -2336,6 +2735,9 @@ const CourseForm = ({ course, onSave, onCancel }) => {
       title: '',
       category: 'Data Science & AI',
       level: 'Beginner',
+      // NEW: durations array with label + priceText
+      durations: [{ label: '3 Months', priceText: 'INR 50,000' }],
+      // legacy compatibility
       duration: '',
       priceText: '',
       status: 'Enrolling Now',
@@ -2345,20 +2747,46 @@ const CourseForm = ({ course, onSave, onCancel }) => {
       projects: [''],
       tools: [''],
       outcomes: [''],
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
+      image:
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop',
     }
   );
   const [saving, setSaving] = useState(false);
 
-  const categories = ['Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
+  const categories = [
+    'Data Science & AI',
+    'Generative AI & LLM Programs',
+    'Industry-Specific AI Programs',
+    'DeepTech & Emerging Technologies',
+  ];
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
-  const statuses = ['Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
+  const statuses = [
+    'Enrolling Now',
+    'Launching Soon',
+    'Under Development',
+    'Planned',
+  ];
+
+  // keep durations in sync to legacy single fields before save
+  const normalizeBeforeSave = (data) => {
+    const copy = { ...data };
+    if (Array.isArray(copy.durations) && copy.durations.length > 0) {
+      copy.duration = copy.durations[0].label || '';
+      copy.priceText = copy.durations[0].priceText || '';
+    } else {
+      // ensure fallback
+      copy.durations = copy.durations || [];
+    }
+    return copy;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave(formData);
+      // normalize for compatibility and send to parent save
+      const payload = normalizeBeforeSave(formData);
+      await onSave(payload);
     } catch (error) {
       console.error('Error saving course:', error);
     } finally {
@@ -2366,10 +2794,11 @@ const CourseForm = ({ course, onSave, onCancel }) => {
     }
   };
 
+  // Curriculum helpers (unchanged)
   const addCurriculumModule = () => {
     setFormData({
       ...formData,
-      curriculum: [...formData.curriculum, { title: '', topics: [''] }]
+      curriculum: [...formData.curriculum, { title: '', topics: [''] }],
     });
   };
 
@@ -2398,10 +2827,13 @@ const CourseForm = ({ course, onSave, onCancel }) => {
 
   const removeTopic = (moduleIndex, topicIndex) => {
     const newCurriculum = [...formData.curriculum];
-    newCurriculum[moduleIndex].topics = newCurriculum[moduleIndex].topics.filter((_, i) => i !== topicIndex);
+    newCurriculum[moduleIndex].topics = newCurriculum[moduleIndex].topics.filter(
+      (_, i) => i !== topicIndex
+    );
     setFormData({ ...formData, curriculum: newCurriculum });
   };
 
+  // Generic array helpers for projects/tools/outcomes
   const addArrayItem = (field) => {
     setFormData({ ...formData, [field]: [...formData[field], ''] });
   };
@@ -2415,6 +2847,31 @@ const CourseForm = ({ course, onSave, onCancel }) => {
   const removeArrayItem = (field, index) => {
     const newArray = formData[field].filter((_, i) => i !== index);
     setFormData({ ...formData, [field]: newArray });
+  };
+
+  // ---------- NEW: Durations management ----------
+  const addDurationOption = () => {
+    setFormData({
+      ...formData,
+      durations: [...(formData.durations || []), { label: '', priceText: '' }],
+    });
+  };
+
+  const updateDurationOption = (index, key, value) => {
+    const newDurations = [...(formData.durations || [])];
+    newDurations[index] = { ...newDurations[index], [key]: value };
+    setFormData({ ...formData, durations: newDurations });
+  };
+
+  const removeDurationOption = (index) => {
+    const newDurations = (formData.durations || []).filter((_, i) => i !== index);
+    setFormData({ ...formData, durations: newDurations });
+  };
+  // -----------------------------------------------
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -2453,8 +2910,10 @@ const CourseForm = ({ course, onSave, onCancel }) => {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
             >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
           </div>
@@ -2469,38 +2928,63 @@ const CourseForm = ({ course, onSave, onCancel }) => {
               onChange={(e) => setFormData({ ...formData, level: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
             >
-              {levels.map(level => (
-                <option key={level} value={level}>{level}</option>
+              {levels.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
               ))}
             </select>
           </div>
 
-          <div>
+          {/* NOTE: Duration / Price moved to durations list */}
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Duration *
+              Durations & Prices *
             </label>
-            <input
-              type="text"
-              required
-              value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-              placeholder="e.g., 3 Months"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Price *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.priceText}
-              onChange={(e) => setFormData({ ...formData, priceText: e.target.value })}
-              placeholder="e.g., INR 50,000"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            />
+            <div className="space-y-3">
+              {(formData.durations || []).map((d, i) => (
+                <div
+                  key={i}
+                  className="flex gap-2 items-center bg-gray-50 p-3 rounded-md border border-gray-100"
+                >
+                  <input
+                    type="text"
+                    placeholder="e.g., 3 Months"
+                    value={d.label}
+                    onChange={(e) => updateDurationOption(i, 'label', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    required={i === 0} // require first to have value
+                  />
+                  <input
+                    type="text"
+                    placeholder="e.g., INR 50,000"
+                    value={d.priceText}
+                    onChange={(e) => updateDurationOption(i, 'priceText', e.target.value)}
+                    className="w-44 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    required={i === 0}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeDurationOption(i)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Remove duration"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+
+              <div>
+                <button
+                  type="button"
+                  onClick={addDurationOption}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  + Add Duration Option
+                </button>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -2513,17 +2997,17 @@ const CourseForm = ({ course, onSave, onCancel }) => {
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
             >
-              {statuses.map(status => (
-                <option key={status} value={status}>{status}</option>
+              {statuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Image URL
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
           <input
             type="url"
             value={formData.image}
@@ -2559,12 +3043,10 @@ const CourseForm = ({ course, onSave, onCancel }) => {
           />
         </div>
 
-        {/* Curriculum */}
+        {/* Curriculum, Projects, Tools, Outcomes (unchanged) */}
         <div>
           <div className="flex justify-between items-center mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Curriculum Modules
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Curriculum Modules</label>
             <button
               type="button"
               onClick={addCurriculumModule}
@@ -2573,7 +3055,7 @@ const CourseForm = ({ course, onSave, onCancel }) => {
               + Add Module
             </button>
           </div>
-          
+
           {formData.curriculum.map((module, moduleIndex) => (
             <div key={moduleIndex} className="mb-4 p-4 border border-gray-200 rounded-lg">
               <div className="flex justify-between items-start mb-3">
@@ -2727,7 +3209,7 @@ const CourseForm = ({ course, onSave, onCancel }) => {
             disabled={saving}
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : (course ? 'Update Course' : 'Add Course')}
+            {saving ? 'Saving...' : course ? 'Update Course' : 'Add Course'}
           </button>
           <button
             type="button"
@@ -2742,6 +3224,7 @@ const CourseForm = ({ course, onSave, onCancel }) => {
     </motion.div>
   );
 };
+
 
 // Admin Dashboard Component
 const AdminDashboard = ({ onLogout }) => {
