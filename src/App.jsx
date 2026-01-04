@@ -2277,54 +2277,86 @@ const App = () => {
     });
   };
 
+
+  const mapSupabaseCourse = (c) => ({
+  ...c,
+
+  // map snake_case → camelCase
+  priceText: c.price_text,
+  shortDescription: c.short_description,
+  fullDescription: c.full_description,
+
+  // duration already matches but keep safe fallback
+  duration: c.duration || '',
+
+  // safety defaults (prevent blank UI)
+  title: c.title || '',
+  category: c.category || '',
+  level: c.level || '',
+  status: c.status || '',
+  image: c.image || '',
+});
+
+
+  
   // Load courses from database on mount (updated with localStorage cache fallback)
-  const loadCourses = async () => {
+const loadCourses = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const data = await fetchCourses(); // Supabase fetch
+    const parsed = Array.isArray(data) ? data : [];
+
+    // 🔑 Map Supabase fields FIRST
+    const mappedFromDb = parsed.map(mapSupabaseCourse);
+
+    // 🔁 Merge DB + cache so admin edits are preserved
+    const merged = mergeDbWithCache(mappedFromDb);
+
+    setCourses(merged);
+
+    // 💾 Save clean, mapped data to cache
     try {
-      setLoading(true);
-      setError(null);
-
-      const data = await fetchCourses(); // may throw or return []
-      const parsed = Array.isArray(data) ? data : [];
-
-      // Merge DB results with any local cache so admin edits are not lost if DB doesn't include fields
-      const merged = mergeDbWithCache(parsed);
-
-      setCourses(merged);
-      // Save to localStorage cache for resilience
-      try {
-        localStorage.setItem("courses_cache", JSON.stringify(merged));
-      } catch (err) {
-        console.warn("Could not save courses to localStorage", err);
-      }
-      console.log("📚 Loaded courses from database (merged with cache):", merged.length);
+      localStorage.setItem("courses_cache", JSON.stringify(merged));
     } catch (err) {
-      console.error("Error loading courses:", err);
-      setError("Failed to load courses from database. Using local cache or fallback.");
-      // fallback to localStorage cache if DB fails
-      try {
-        const cached = localStorage.getItem("courses_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          setCourses(parsed);
-          console.log("📚 Loaded courses from localStorage cache:", parsed.length);
-        } else {
-          // final fallback to mock data (if you have mockCourses defined)
-          if (typeof mockCourses !== "undefined") {
-            setCourses(mockCourses);
-            localStorage.setItem("courses_cache", JSON.stringify(mockCourses));
-            console.log("📚 Using mockCourses fallback.");
-          } else {
-            setCourses([]);
-          }
-        }
-      } catch (cacheErr) {
-        console.error("Error reading courses cache:", cacheErr);
-        setCourses(typeof mockCourses !== "undefined" ? mockCourses : []);
-      }
-    } finally {
-      setLoading(false);
+      console.warn("Could not save courses to localStorage", err);
     }
-  };
+
+    console.log(
+      "📚 Loaded courses from database (mapped + merged):",
+      merged.length
+    );
+  } catch (err) {
+    console.error("Error loading courses:", err);
+    setError("Failed to load courses from database. Using cached data.");
+
+    // ⚠️ Fallback to cache ONLY
+    try {
+      const cached = JSON.parse(localStorage.getItem("courses_cache") || "[]");
+      setCourses(cached.map(mapSupabaseCourse));
+
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const mappedCache = parsed.map(mapSupabaseCourse);
+        setCourses(mappedCache);
+        console.log("📦 Loaded courses from cache:", mappedCache.length);
+      } else if (typeof mockCourses !== "undefined") {
+        setCourses(mockCourses);
+        localStorage.setItem("courses_cache", JSON.stringify(mockCourses));
+        console.log("🧪 Using mockCourses fallback");
+      } else {
+        setCourses([]);
+      }
+    } catch (cacheErr) {
+      console.error("Cache read error:", cacheErr);
+      setCourses(typeof mockCourses !== "undefined" ? mockCourses : []);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Load courses on mount
   useEffect(() => {
@@ -2347,11 +2379,11 @@ const App = () => {
     try {
       const created = await createCourse(course); // may return created object
       // Combine DB return (if any) with original data to ensure durations preserved
-      const finalCourse = {
+      const finalCourse = mapSupabaseCourse({
         ...(created || {}),
         ...course,
         id: (created && created.id) || course.id || Date.now().toString(),
-      };
+      });
 
       // ensure durations -> legacy fields
       if (Array.isArray(finalCourse.durations) && finalCourse.durations.length > 0) {
