@@ -737,11 +737,24 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
 
 
 // Course Detail Modal
-// Course Detail Modal
 const CourseDetailModal = ({ course, selectedDurationIndex = 0, onClose }) => {
   if (!course) return null;
  const { setCurrentPage, openEnquiry } = useApp();
+const [selectedIdx, setSelectedIdx] = useState(0);
+ const durations = React.useMemo(() => {
+    if (!course) return [];
+    if (Array.isArray(course.durations) && course.durations.length > 0) {
+      return course.durations.map((d) =>
+        typeof d === 'string'
+          ? { label: d, priceText: course.priceText || '' }
+          : { label: d.label || '', priceText: d.priceText || '' }
+      );
+    }
+    // fallback single option
+    return [{ label: course.duration || '', priceText: course.priceText || '' }];
+  }, [course]);
 
+  const current = durations[selectedIdx] || { label: course?.duration || '', priceText: course?.priceText || '' };
   // helper to safely read price
 const currentDuration =
   course?.durations?.[selectedDurationIndex]
@@ -791,33 +804,37 @@ const currentDuration =
 
           <h2 className="text-3xl font-bold mb-4 text-blue-900">{course.title}</h2>
 
-          <div className="flex flex-wrap gap-4 mb-6 text-sm items-center">
-            <span className="flex items-center text-gray-800">
-              <Award className="w-5 h-5 mr-2 text-blue-600" /> {course.level}
-            </span>
+          <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500 items-center">
+          <span className="flex items-center">
+            <Award className="w-4 h-4 mr-1" /> {course?.level}
+          </span>
 
-            {/* Duration selector */}
-            {course.durations && course.durations.length > 0 ? (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Duration:</label>
-                <select
-                  value={selectedDurationIndex}
-                  onChange={(e) => setSelectedDurationIndex(Number(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg"
-                >
-                  {course.durations.map((d, idx) => (
-                    <option key={idx} value={idx}>
-                      {d.label || `Option ${idx + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <span className="text-gray-800">{displayedDuration}</span>
-            )}
+          <span>•</span>
 
-            <span className="text-xl font-bold text-blue-600">₹{displayedPrice}</span>
-          </div>
+          {/* Duration display / selector */}
+          {durations.length > 1 ? (
+            <div className="flex items-center gap-2">
+              <select
+                aria-label="Select duration"
+                value={selectedIdx}
+                onChange={(e) => setSelectedIdx(Number(e.target.value))}
+                className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+              >
+                {durations.map((d, idx) => (
+                  <option key={idx} value={idx}>
+                    {d.label || `Option ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <span>{current.label || '—'}</span>
+          )}
+
+          <span>•</span>
+
+          <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
+        </div>
 
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-3 text-gray-900">Overview</h3>
