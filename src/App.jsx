@@ -24,6 +24,7 @@ const useApp = () => {
 };
 
 
+
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
 
@@ -245,7 +246,7 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <motion.div
-            className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
+            className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
             whileHover={{ scale: 1.05 }}
             onClick={() => setCurrentPage('home')}
           >
@@ -360,6 +361,7 @@ const Header = () => {
             className="md:hidden text-gray-700"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
+            
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -373,6 +375,7 @@ const Header = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden pb-4"
+              
             >
               {navItems.map((item) => {
                 if (item.page === 'courses') {
@@ -735,22 +738,16 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
 
 // Course Detail Modal
 // Course Detail Modal
-const CourseDetailModal = ({ course, onClose }) => {
+const CourseDetailModal = ({ course, selectedDurationIndex = 0, onClose }) => {
   if (!course) return null;
-
-  // show duration options, default to first
-  const [selectedDurationIndex, setSelectedDurationIndex] = useState(0);
-
-  useEffect(() => {
-    // reset selection when course changes
-    setSelectedDurationIndex(0);
-  }, [course]);
+ const { setCurrentPage, openEnquiry } = useApp();
 
   // helper to safely read price
-  const currentDuration =
-    course?.durations && course.durations.length > 0
-      ? course.durations[selectedDurationIndex]
-      : null;
+const currentDuration =
+  course?.durations?.[selectedDurationIndex]
+  || course?.durations?.[0]
+  || null;
+
 
   const displayedDuration = currentDuration?.label || course?.duration || '—';
   const displayedPrice = currentDuration?.priceText || course?.priceText || '—';
@@ -886,20 +883,20 @@ const CourseDetailModal = ({ course, onClose }) => {
 
           <div className="flex gap-4">
             <button
-              onClick={() => {
-                onClose();
+              onClick={() =>openEnquiry() }
+               
                 // This would open enquiry modal in actual implementation
-              }}
+              
               className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
             >
               Apply Now
             </button>
-            <a
-              href="mailto:info@salientlearnings.com"
-              className="flex-1 border-2 border-blue-600 text-blue-600 py-3 px-6 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-center"
-            >
+            <button
+            onClick={() => openEnquiry()}
+            className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+          >
               Contact Advisor
-            </a>
+            </button>
           </div>
         </div>
       </motion.div>
@@ -913,6 +910,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
     name: '',
     email: '',
     phone: '',
+    whatsapp: '',
     program: selectedCourse?.title || '',
     message: '',
     contactMethod: 'Whatsapp',
@@ -980,6 +978,13 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
         }
       }, 700); // 700ms debounce
 
+      return;
+    }
+
+    // Whatsapp input: strip non-digit characters
+    if (name === 'whatsapp') {
+      const cleaned = digitsOnly(value);
+      setFormData(prev => ({ ...prev, whatsapp: cleaned }));
       return;
     }
 
@@ -1055,6 +1060,12 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
       return;
     }
 
+     // Phone must be digits-only and non-empty
+    if (!/^\d+$/.test(formData.whatsapp) || formData.whatsapp.length < 6) {
+      setPhoneWarning('Please enter a valid phone number (digits only).');
+      return;
+    }
+
     try {
       const payload = { ...formData };
       if (formData.contactMethod === 'Whatsapp') payload.whatsappCheck = whatsappStatus;
@@ -1079,6 +1090,7 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
             name: "",
             email: "",
             phone: "",
+            whatsapp: "",
             program: "",
             message: "",
             contactMethod: "Whatsapp",
@@ -1108,12 +1120,14 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-2xl max-w-md w-full p-8 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+  initial={{ scale: 0.9, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  exit={{ scale: 0.9, opacity: 0 }}
+  className="bg-white rounded-2xl max-w-md w-full shadow-2xl
+             max-h-[90vh] flex flex-col"
+  onClick={(e) => e.stopPropagation()}
+>
+
         {submitted && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -1126,14 +1140,14 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
           </motion.div>
         )}
 
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex justify-between items-center mb-2 px-8 pt-8">
           <h3 className="text-2xl font-bold text-gray-900">Get in Touch</h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto px-8 pb-8">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
             <input
@@ -1186,11 +1200,29 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
             )}
           </div>
 
+           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Whatsapp *</label>
+            <input
+              type="tel"
+              id="whatsapp"
+              name="whatsapp"
+              required
+              value={formData.whatsapp}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="Enter digits only (e.g. 918123456789)"
+            />
+            {phoneWarning && <p className="mt-2 text-sm text-yellow-700">{phoneWarning}</p>}
+
+            
+          </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Course Interested In</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Course Interested In *</label>
             <select
               id="program"
               name="program"
+              required
               value={formData.program}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
@@ -1310,7 +1342,7 @@ const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
             Explore Our Programs
           </h1>
-          <p className="text-xl text-gray-800 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-800 max-w-3xl mx-auto whitespace-nowrap text-ellipsis">
             Choose from our comprehensive range of AI and Data Science programs designed for every skill level
           </p>
         </motion.div>
@@ -2083,7 +2115,7 @@ const Footer = () => {
               alt="Salient Learnings Logo"
             />
             <p className="text-gray-400">
-              Building future-ready talent in AI, Data & Deep Technologies
+              Building future-ready talent in AI, <br></br>Data & Deep Technologies
             </p>
           </div>
 
@@ -2201,81 +2233,81 @@ const App = () => {
   const [error, setError] = useState(null);
 
   // ---------- Helper: merge DB data with local cache ----------
-  const mergeDbWithCache = (dbList = []) => {
-    // read local cache
-    let cache = [];
-    try {
-      const raw = localStorage.getItem("courses_cache");
-      if (raw) cache = JSON.parse(raw);
-    } catch (err) {
-      console.warn("Invalid courses_cache in localStorage:", err);
-    }
-    const cacheById = new Map((cache || []).map((c) => [String(c.id), c]));
+  // const mergeDbWithCache = (dbList = []) => {
+  //   // read local cache
+  //   let cache = [];
+  //   try {
+  //     const raw = localStorage.getItem("courses_cache");
+  //     if (raw) cache = JSON.parse(raw);
+  //   } catch (err) {
+  //     console.warn("Invalid courses_cache in localStorage:", err);
+  //   }
+  //   const cacheById = new Map((cache || []).map((c) => [String(c.id), c]));
 
-    // Merge for each DB item: if critical fields are missing in DB,
-    // prefer cached values so UI edits aren't lost on refresh.
-    return dbList.map((item) => {
-      const id = String(item.id ?? "");
-      const cached = cacheById.get(id);
-      if (!cached) return item;
+  //   // Merge for each DB item: if critical fields are missing in DB,
+  //   // prefer cached values so UI edits aren't lost on refresh.
+  //   return dbList.map((item) => {
+  //     const id = String(item.id ?? "");
+  //     const cached = cacheById.get(id);
+  //     if (!cached) return item;
 
-      const merged = { ...item };
+  //     const merged = { ...item };
 
-      // Preserve durations/pricing if DB misses them
-      if ((!merged.durations || merged.durations.length === 0) && cached.durations) {
-        merged.durations = cached.durations;
-      }
+  //     // Preserve durations/pricing if DB misses them
+  //     if ((!merged.durations || merged.durations.length === 0) && cached.durations) {
+  //       merged.durations = cached.durations;
+  //     }
 
-      // Preserve legacy single fields if missing
-      if ((!merged.duration || merged.duration === "") && cached.duration) {
-        merged.duration = cached.duration;
-      }
-      if ((!merged.priceText || merged.priceText === "") && cached.priceText) {
-        merged.priceText = cached.priceText;
-      }
+  //     // Preserve legacy single fields if missing
+  //     if ((!merged.duration || merged.duration === "") && cached.duration) {
+  //       merged.duration = cached.duration;
+  //     }
+  //     if ((!merged.priceText || merged.priceText === "") && cached.priceText) {
+  //       merged.priceText = cached.priceText;
+  //     }
 
-      // Preserve short/full descriptions if DB omits them
-      if ((!merged.shortDescription || merged.shortDescription === "") && cached.shortDescription) {
-        merged.shortDescription = cached.shortDescription;
-      }
-      if ((!merged.fullDescription || merged.fullDescription === "") && cached.fullDescription) {
-        merged.fullDescription = cached.fullDescription;
-      }
+  //     // Preserve short/full descriptions if DB omits them
+  //     if ((!merged.shortDescription || merged.shortDescription === "") && cached.shortDescription) {
+  //       merged.shortDescription = cached.shortDescription;
+  //     }
+  //     if ((!merged.fullDescription || merged.fullDescription === "") && cached.fullDescription) {
+  //       merged.fullDescription = cached.fullDescription;
+  //     }
 
-      // Preserve title, image, category, level, status if DB omits or empty
-      if ((!merged.title || merged.title === "") && cached.title) {
-        merged.title = cached.title;
-      }
-      if ((!merged.image || merged.image === "") && cached.image) {
-        merged.image = cached.image;
-      }
-      if ((!merged.category || merged.category === "") && cached.category) {
-        merged.category = cached.category;
-      }
-      if ((!merged.level || merged.level === "") && cached.level) {
-        merged.level = cached.level;
-      }
-      if ((!merged.status || merged.status === "") && cached.status) {
-        merged.status = cached.status;
-      }
+  //     // Preserve title, image, category, level, status if DB omits or empty
+  //     if ((!merged.title || merged.title === "") && cached.title) {
+  //       merged.title = cached.title;
+  //     }
+  //     if ((!merged.image || merged.image === "") && cached.image) {
+  //       merged.image = cached.image;
+  //     }
+  //     if ((!merged.category || merged.category === "") && cached.category) {
+  //       merged.category = cached.category;
+  //     }
+  //     if ((!merged.level || merged.level === "") && cached.level) {
+  //       merged.level = cached.level;
+  //     }
+  //     if ((!merged.status || merged.status === "") && cached.status) {
+  //       merged.status = cached.status;
+  //     }
 
-      // Preserve arrays (curriculum, projects, tools, outcomes)
-      if ((!merged.curriculum || merged.curriculum.length === 0) && cached.curriculum) {
-        merged.curriculum = cached.curriculum;
-      }
-      if ((!merged.projects || merged.projects.length === 0) && cached.projects) {
-        merged.projects = cached.projects;
-      }
-      if ((!merged.tools || merged.tools.length === 0) && cached.tools) {
-        merged.tools = cached.tools;
-      }
-      if ((!merged.outcomes || merged.outcomes.length === 0) && cached.outcomes) {
-        merged.outcomes = cached.outcomes;
-      }
+  //     // Preserve arrays (curriculum, projects, tools, outcomes)
+  //     if ((!merged.curriculum || merged.curriculum.length === 0) && cached.curriculum) {
+  //       merged.curriculum = cached.curriculum;
+  //     }
+  //     if ((!merged.projects || merged.projects.length === 0) && cached.projects) {
+  //       merged.projects = cached.projects;
+  //     }
+  //     if ((!merged.tools || merged.tools.length === 0) && cached.tools) {
+  //       merged.tools = cached.tools;
+  //     }
+  //     if ((!merged.outcomes || merged.outcomes.length === 0) && cached.outcomes) {
+  //       merged.outcomes = cached.outcomes;
+  //     }
 
-      return merged;
-    });
-  };
+  //     return merged;
+  //   });
+  // };
 
 
   const mapSupabaseCourse = (c) => ({
@@ -2287,7 +2319,11 @@ const App = () => {
   fullDescription: c.full_description,
 
   // duration already matches but keep safe fallback
-  duration: c.duration || '',
+  durations: Array.isArray(c.durations) && c.durations.length
+    ? c.durations
+    : c.duration
+      ? [{ label: c.duration, priceText: c.price_text || '' }]
+      : [],
 
   // safety defaults (prevent blank UI)
   title: c.title || '',
@@ -2305,52 +2341,35 @@ const loadCourses = async () => {
     setLoading(true);
     setError(null);
 
-    const data = await fetchCourses(); // Supabase fetch
-    const parsed = Array.isArray(data) ? data : [];
+    // ✅ Always load from database first
+    const dbCourses = await fetchCourses();
 
-    // 🔑 Map Supabase fields FIRST
-    const mappedFromDb = parsed.map(mapSupabaseCourse);
+    if (Array.isArray(dbCourses) && dbCourses.length > 0) {
+      setCourses(dbCourses);
 
-    // 🔁 Merge DB + cache so admin edits are preserved
-    const merged = mergeDbWithCache(mappedFromDb);
+      // cache only for offline use
+      localStorage.setItem('courses_cache', JSON.stringify(dbCourses));
 
-    setCourses(merged);
-
-    // 💾 Save clean, mapped data to cache
-    try {
-      localStorage.setItem("courses_cache", JSON.stringify(merged));
-    } catch (err) {
-      console.warn("Could not save courses to localStorage", err);
+      console.log('📚 Loaded courses from Supabase:', dbCourses.length);
+      return;
     }
 
-    console.log(
-      "📚 Loaded courses from database (mapped + merged):",
-      merged.length
-    );
+    throw new Error('Empty DB response');
+
   } catch (err) {
-    console.error("Error loading courses:", err);
-    setError("Failed to load courses from database. Using cached data.");
+    console.warn('⚠️ DB load failed. Using local cache.');
 
-    // ⚠️ Fallback to cache ONLY
     try {
-      const cached = JSON.parse(localStorage.getItem("courses_cache") || "[]");
-      setCourses(cached.map(mapSupabaseCourse));
-
+      const cached = localStorage.getItem('courses_cache');
       if (cached) {
-        const parsed = JSON.parse(cached);
-        const mappedCache = parsed.map(mapSupabaseCourse);
-        setCourses(mappedCache);
-        console.log("📦 Loaded courses from cache:", mappedCache.length);
-      } else if (typeof mockCourses !== "undefined") {
-        setCourses(mockCourses);
-        localStorage.setItem("courses_cache", JSON.stringify(mockCourses));
-        console.log("🧪 Using mockCourses fallback");
+        setCourses(JSON.parse(cached));
+        console.log('📚 Loaded courses from cache');
       } else {
         setCourses([]);
       }
     } catch (cacheErr) {
-      console.error("Cache read error:", cacheErr);
-      setCourses(typeof mockCourses !== "undefined" ? mockCourses : []);
+      console.error('❌ Cache error:', cacheErr);
+      setCourses([]);
     }
   } finally {
     setLoading(false);
@@ -2800,17 +2819,21 @@ const CourseForm = ({ course, onSave, onCancel }) => {
   ];
 
   // keep durations in sync to legacy single fields before save
-  const normalizeBeforeSave = (data) => {
-    const copy = { ...data };
-    if (Array.isArray(copy.durations) && copy.durations.length > 0) {
-      copy.duration = copy.durations[0].label || '';
-      copy.priceText = copy.durations[0].priceText || '';
-    } else {
-      // ensure fallback
-      copy.durations = copy.durations || [];
-    }
-    return copy;
-  };
+const normalizeBeforeSave = (data) => {
+  const copy = { ...data };
+
+  // store full durations array
+  copy.durations = Array.isArray(data.durations) ? data.durations : [];
+
+  // keep legacy fields for backward compatibility
+  if (copy.durations.length > 0) {
+    copy.duration = copy.durations[0].label || '';
+    copy.priceText = copy.durations[0].priceText || '';
+  }
+
+  return copy;
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();

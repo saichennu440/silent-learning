@@ -4,7 +4,9 @@ import { supabase } from '../config/supabase';
  * Courses Service - All database operations for courses
  */
 
-// Fetch all courses
+/* =====================================================
+   FETCH ALL COURSES
+===================================================== */
 export const fetchCourses = async () => {
   try {
     const { data, error } = await supabase
@@ -13,16 +15,20 @@ export const fetchCourses = async () => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
+
     console.log('✅ Fetched courses:', data.length);
-    return data;
+
+    // 🔴 IMPORTANT FIX
+    return data.map(convertToCamelCase);
   } catch (error) {
     console.error('❌ Error fetching courses:', error);
     throw error;
   }
 };
 
-// Fetch single course by ID
+/* =====================================================
+   FETCH COURSE BY ID
+===================================================== */
 export const fetchCourseById = async (id) => {
   try {
     const { data, error } = await supabase
@@ -32,14 +38,17 @@ export const fetchCourseById = async (id) => {
       .single();
 
     if (error) throw error;
-    return data;
+
+    return convertToCamelCase(data);
   } catch (error) {
     console.error('❌ Error fetching course:', error);
     throw error;
   }
 };
 
-// Fetch single course by slug
+/* =====================================================
+   FETCH COURSE BY SLUG
+===================================================== */
 export const fetchCourseBySlug = async (slug) => {
   try {
     const { data, error } = await supabase
@@ -49,39 +58,46 @@ export const fetchCourseBySlug = async (slug) => {
       .single();
 
     if (error) throw error;
-    return data;
+
+    return convertToCamelCase(data);
   } catch (error) {
     console.error('❌ Error fetching course:', error);
     throw error;
   }
 };
 
-// Add new course
+/* =====================================================
+   CREATE COURSE
+===================================================== */
 export const createCourse = async (courseData) => {
   try {
     // Generate slug from title
     const slug = courseData.title
       .toLowerCase()
+      .trim()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-    // Prepare data for database (convert field names to snake_case)
-    const dbData = {
-      slug: slug,
-      title: courseData.title,
-      category: courseData.category,
-      level: courseData.level,
-      duration: courseData.duration,
-      price_text: courseData.priceText,
-      status: courseData.status,
-      short_description: courseData.shortDescription,
-      full_description: courseData.fullDescription,
-      curriculum: courseData.curriculum,
-      projects: courseData.projects,
-      tools: courseData.tools,
-      outcomes: courseData.outcomes,
-      image: courseData.image
-    };
+const dbData = {
+  slug,
+  title: courseData.title,
+  category: courseData.category,
+  level: courseData.level,
+  // save full array to jsonb
+  durations: Array.isArray(courseData.durations) ? courseData.durations : [],
+  // legacy single fields for compatibility
+  duration: courseData.durations && courseData.durations.length ? courseData.durations[0].label : courseData.duration || '',
+  price_text: courseData.durations && courseData.durations.length ? courseData.durations[0].priceText : courseData.priceText || '',
+  status: courseData.status,
+  short_description: courseData.shortDescription,
+  full_description: courseData.fullDescription,
+  curriculum: courseData.curriculum,
+  projects: courseData.projects,
+  tools: courseData.tools,
+  outcomes: courseData.outcomes,
+  image: courseData.image
+};
+
 
     const { data, error } = await supabase
       .from('courses')
@@ -90,10 +106,9 @@ export const createCourse = async (courseData) => {
       .single();
 
     if (error) throw error;
-    
+
     console.log('✅ Course created:', data.id);
-    
-    // Convert back to camelCase for frontend
+
     return convertToCamelCase(data);
   } catch (error) {
     console.error('❌ Error creating course:', error);
@@ -101,25 +116,28 @@ export const createCourse = async (courseData) => {
   }
 };
 
-// Update existing course
+/* =====================================================
+   UPDATE COURSE
+===================================================== */
 export const updateCourse = async (id, courseData) => {
   try {
-    // Prepare data for database (convert field names to snake_case)
     const dbData = {
-      title: courseData.title,
-      category: courseData.category,
-      level: courseData.level,
-      duration: courseData.duration,
-      price_text: courseData.priceText,
-      status: courseData.status,
-      short_description: courseData.shortDescription,
-      full_description: courseData.fullDescription,
-      curriculum: courseData.curriculum,
-      projects: courseData.projects,
-      tools: courseData.tools,
-      outcomes: courseData.outcomes,
-      image: courseData.image
-    };
+  title: courseData.title,
+  category: courseData.category,
+  level: courseData.level,
+  durations: Array.isArray(courseData.durations) ? courseData.durations : [],
+  duration: courseData.durations && courseData.durations.length ? courseData.durations[0].label : courseData.duration || '',
+  price_text: courseData.durations && courseData.durations.length ? courseData.durations[0].priceText : courseData.priceText || '',
+  status: courseData.status,
+  short_description: courseData.shortDescription,
+  full_description: courseData.fullDescription,
+  curriculum: courseData.curriculum,
+  projects: courseData.projects,
+  tools: courseData.tools,
+  outcomes: courseData.outcomes,
+  image: courseData.image
+};
+
 
     const { data, error } = await supabase
       .from('courses')
@@ -129,10 +147,9 @@ export const updateCourse = async (id, courseData) => {
       .single();
 
     if (error) throw error;
-    
+
     console.log('✅ Course updated:', data.id);
-    
-    // Convert back to camelCase for frontend
+
     return convertToCamelCase(data);
   } catch (error) {
     console.error('❌ Error updating course:', error);
@@ -140,7 +157,9 @@ export const updateCourse = async (id, courseData) => {
   }
 };
 
-// Delete course
+/* =====================================================
+   DELETE COURSE
+===================================================== */
 export const deleteCourse = async (id) => {
   try {
     const { error } = await supabase
@@ -149,7 +168,7 @@ export const deleteCourse = async (id) => {
       .eq('id', id);
 
     if (error) throw error;
-    
+
     console.log('✅ Course deleted:', id);
     return true;
   } catch (error) {
@@ -158,7 +177,9 @@ export const deleteCourse = async (id) => {
   }
 };
 
-// Search courses
+/* =====================================================
+   SEARCH COURSES
+===================================================== */
 export const searchCourses = async (searchTerm) => {
   try {
     const { data, error } = await supabase
@@ -168,7 +189,7 @@ export const searchCourses = async (searchTerm) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
+
     return data.map(convertToCamelCase);
   } catch (error) {
     console.error('❌ Error searching courses:', error);
@@ -176,7 +197,9 @@ export const searchCourses = async (searchTerm) => {
   }
 };
 
-// Filter courses by category
+/* =====================================================
+   FILTER BY CATEGORY
+===================================================== */
 export const filterCoursesByCategory = async (category) => {
   try {
     const { data, error } = await supabase
@@ -186,7 +209,7 @@ export const filterCoursesByCategory = async (category) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
+
     return data.map(convertToCamelCase);
   } catch (error) {
     console.error('❌ Error filtering courses:', error);
@@ -194,7 +217,9 @@ export const filterCoursesByCategory = async (category) => {
   }
 };
 
-// Helper function: Convert database fields (snake_case) to frontend fields (camelCase)
+/* =====================================================
+   HELPER: DB → FRONTEND FIELD MAPPING
+===================================================== */
 const convertToCamelCase = (dbCourse) => {
   return {
     id: dbCourse.id,
@@ -217,8 +242,9 @@ const convertToCamelCase = (dbCourse) => {
   };
 };
 
-// Export helper for bulk conversion
+/* =====================================================
+   BULK CONVERTER (OPTIONAL EXPORT)
+===================================================== */
 export const convertCoursesToCamelCase = (courses) => {
   return courses.map(convertToCamelCase);
 };
-
