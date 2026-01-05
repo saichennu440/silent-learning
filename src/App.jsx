@@ -237,7 +237,7 @@ const Header = () => {
   return (
     <motion.header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white shadow-md' : 'bg-transparent'
+        scrolled || isOpen ? 'bg-white shadow-md' : 'bg-transparent'
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -1668,23 +1668,108 @@ const ContactPage = () => {
     name: '',
     email: '',
     phone: '',
+    whatsapp: '',
     program: '',
-    message: ''
+    message: '',
+    contactMethod: 'Whatsapp'
   });
- // const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [phoneWarning, setPhoneWarning] = useState('');
+  const [whatsappWarning, setWhatsappWarning] = useState('');
 
-  // const handleSubmit = (e: { preventDefault: () => void; }) => {
-  //   e.preventDefault();
-  //   console.log('Contact form submitted:', formData);
-  //   setSubmitted(true);
-  //   setTimeout(() => {
-  //     setSubmitted(false);
-  //     setFormData({ name: '', email: '', phone: '', program: '', message: '' });
-  //   }, 3000);
-  // };
+  const digitsOnly = (value) => (value || '').replace(/\D+/g, '');
 
-   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Phone input: strip non-digits
+    if (name === 'phone') {
+      const hasLetters = /[A-Za-z]/.test(value);
+      if (hasLetters) {
+        setPhoneWarning('Only numbers allowed. Letters were removed automatically.');
+      } else {
+        setPhoneWarning('');
+      }
+
+      const cleaned = digitsOnly(value);
+      setFormData(prev => ({ ...prev, phone: cleaned }));
+      return;
+    }
+
+    // Whatsapp input: strip non-digits
+    if (name === 'whatsapp') {
+      const hasLetters = /[A-Za-z]/.test(value);
+      if (hasLetters) {
+        setWhatsappWarning('Only numbers allowed. Letters were removed automatically.');
+      } else {
+        setWhatsappWarning('');
+      }
+
+      const cleaned = digitsOnly(value);
+      setFormData(prev => ({ ...prev, whatsapp: cleaned }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Final submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Phone validation
+    if (!/^\d+$/.test(formData.phone) || formData.phone.length < 6) {
+      setPhoneWarning('Please enter a valid phone number (digits only, at least 6 digits).');
+      return;
+    }
+
+    // WhatsApp validation
+    if (!/^\d+$/.test(formData.whatsapp) || formData.whatsapp.length < 6) {
+      setWhatsappWarning('Please enter a valid WhatsApp number (digits only, at least 6 digits).');
+      return;
+    }
+//https://formspree.io/f/xanogwrj
+    try {
+      const response = await fetch("https://formspree.io/f/mzdpzzql", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setSubmitted(true);
+          // Scroll to top smoothly
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+        window.dispatchEvent(new CustomEvent("enquiry-submitted-success"));
+
+        setTimeout(() => {
+          setSubmitted(false);
+          setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            whatsapp: "",
+            program: "",
+            message: "",
+            contactMethod: "Whatsapp",
+          });
+          setPhoneWarning('');
+          setWhatsappWarning('');
+        }, 3000);
+      } else {
+        console.error("Formspree submit returned non-ok:", response.status);
+        alert("Failed to submit. Please try again.");
+      }
+    } catch (error) {
+      console.error("Enquiry failed", error);
+      alert("An error occurred. Please try again.");
+    }
   };
 
   return (
@@ -1723,7 +1808,7 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
                   <a
-                    href="tel:+919966357297"
+                    href="tel:+917386527858"
                     className="text-blue-600 hover:underline"
                   >
                     +91-7386527858
@@ -1760,13 +1845,13 @@ const ContactPage = () => {
             <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl">
               <h3 className="font-semibold text-gray-900 mb-2">Quick Enquiry</h3>
               <p className="text-gray-800 mb-4">
-                Need immediate assistance? Click below to open our enquiry form.
+                Need immediate assistance? Click below to open our whatsapp enquiry.
               </p>
               <button
-                onClick={() => openEnquiry()}
+                onClick={() => window.open("https://wa.me/917386527858", "_blank")}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full"
               >
-                Open Enquiry Form
+                Open whatsapp Enquiry
               </button>
             </div>
           </motion.div>
@@ -1780,143 +1865,158 @@ const ContactPage = () => {
           >
             <h2 className="text-2xl font-bold mb-6 text-blue-900">Send us a Message</h2>
 
-
-
-             <form action="https://formspree.io/f/mzdpzzql"
-                   method="POST"
-                    className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="Your name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                      name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                placeholder="+91-XXXXXXXXXX"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Interested In
-              </label>
-              <select
-                id="program"
-                name="program"
-                value={formData.program}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-              >
-                <option value="">Select a course</option>
-                <option value="Data Science Course">Data Science Course</option>
-                <option value="Cyber Security Course">Cyber Security Course</option>
-                <option value="Python Course Course">Python Course</option>
-                <option value="Java Full Stack Course">Java Full Stack Course</option>
-                <option value="DevOps course">DevOps course</option>
-                <option value="Generative AI Course">Generative AI Course</option>
-              </select>
-
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Preferred Contact Method
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="Whatsapp"
-                     id="contactMethod"
-                      name="contactMethod"
-                    checked={formData.contactMethod === 'Whatsapp'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Whatsapp
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    value="phone"
-                    id="contactMethod"
-                      name="contactMethod"
-                    checked={formData.contactMethod === 'phone'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Phone Call
-                </label>
+            {submitted ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-green-100 rounded-full p-3">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-semibold text-green-800 mb-2">
+                  Submitted Successfully!
+                </h3>
+                <p className="text-green-700">
+                  Thank you for reaching out. We'll get back to you shortly.
+                </p>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="Your name"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Message
-              </label>
-              <textarea
-              id="message"
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="Enter digits only (e.g. 918123456789)"
+                  />
+                  {phoneWarning && <p className="mt-2 text-sm text-yellow-700">{phoneWarning}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp *</label>
+                  <input
+                    type="tel"
+                    id="whatsapp"
+                    name="whatsapp"
+                    required
+                    value={formData.whatsapp}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    placeholder="Enter digits only (e.g. 918123456789)"
+                  />
+                  {whatsappWarning && <p className="mt-2 text-sm text-yellow-700">{whatsappWarning}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Course Interested In *</label>
+                  <select
+                    id="program"
+                    name="program"
+                    required
+                    value={formData.program}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  >
+                    <option value="">Select a course</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Cyber Security">Cyber Security</option>
+                    <option value="Python Course">Python Course</option>
+                    <option value="Java Full Stack Course">Java Full Stack Course</option>
+                    <option value="DevOps course">DevOps course</option>
+                    <option value="Generative AI Course">Generative AI Course</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Contact Method</label>
+                  <div className="flex gap-4 items-center">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="Whatsapp"
+                        id="contactMethodWhatsapp"
+                        name="contactMethod"
+                        checked={formData.contactMethod === 'Whatsapp'}
+                        onChange={handleChange}
+                        className="mr-2"
+                      />
+                      WhatsApp
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="phone"
+                        id="contactMethodPhone"
+                        name="contactMethod"
+                        checked={formData.contactMethod === 'phone'}
+                        onChange={handleChange}
+                        className="mr-2"
+                      />
+                      Phone Call
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                  <textarea
+                    id="message"
                     name="message"
-                value={formData.message}
-                onChange={handleChange}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
-                placeholder="Tell us about your goals..."
-              />
-            </div>
+                    value={formData.message}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+                    placeholder="Tell us about your goals..."
+                  />
+                </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Submit Enquiry
-            </button>
+                <button
+                  type="submit"
+                  className="w-full py-3 px-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  Submit Enquiry
+                </button>
 
-            <p className="text-xs text-gray-500 text-center">
-              Or email us directly at{' '}
-              <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
-                info@salientlearnings.com
-              </a>
-            </p>
-          </form>
-            
+                <p className="text-xs text-gray-500 text-center">
+                  Or email us directly at{' '}
+                  <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
+                    info@salientlearnings.com
+                  </a>
+                </p>
+              </form>
+            )}
           </motion.div>
         </div>
       </div>
@@ -1979,6 +2079,7 @@ const HomePage = () => {
       <WhySalient />
       
       {/* Featured Program Section */}
+    {/* Featured Program Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -1988,62 +2089,145 @@ const HomePage = () => {
             className="text-center mb-12"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
-              Featured Program
+              Featured Programs
             </h2>
             <p className="text-xl text-gray-800">
-              Our comprehensive Data Science & AI certification program
+              Our comprehensive certification programs
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-5xl mx-auto"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="relative h-64 md:h-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Card 1 - Data Science & AI */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
+            >
+              <div className="relative h-48">
                 <img
                   src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop"
                   alt="Data Science & AI"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-8">
-                <h3 className="text-3xl font-bold mb-4 text-gray-900">
+              <div className="p-6 flex-grow flex flex-col">
+                <h3 className="text-xl font-bold mb-3 text-gray-900">
                   Data Science & AI Certification
                 </h3>
-                <ul className="space-y-3 mb-6">
-                  <li className="flex items-start text-gray-800">
-                    <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                <ul className="space-y-2 mb-4 flex-grow">
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Complete pipeline: Analytics → ML → DL → GenAI
                   </li>
-                  <li className="flex items-start text-gray-800">
-                    <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                     Build real projects including an AI Chatbot
                   </li>
-                  <li className="flex items-start text-gray-800">
-                    <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Job-oriented outcomes with placement support
-                  </li>
-                  <li className="flex items-start text-gray-800">
-                    <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Mentor-led learning with industry practitioners
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Job-oriented outcomes with placement assistance
                   </li>
                 </ul>
-
-                {/* IMPORTANT: don't put direct <a download> here — use the enquiry flow */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleDownloadClick}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
                 >
-                  Download Full Curriculum
+                  Download Curriculum
                 </motion.button>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {/* Card 2 - Add your second program */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
+            >
+              <div className="relative h-48">
+                <img
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop"
+                  alt="Program 2"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 flex-grow flex flex-col">
+                <h3 className="text-xl font-bold mb-3 text-gray-900">
+                       Python & Generative AI Certification
+                </h3>
+                <ul className="space-y-2 mb-4 flex-grow">
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Master Python programming from basics to advanced
+                  </li>
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Build projects using Generative AI models
+                  </li>
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Job-oriented outcomes with placement assistance
+                  </li>
+                </ul>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDownloadClick}
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
+                >
+                  Download Curriculum
+                </motion.button>
+              </div>
+            </motion.div>
+
+            {/* Card 3 - Add your third program */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
+            >
+              <div className="relative h-48">
+                <img
+                  src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&auto=format&fit=crop"
+                  alt="Program 3"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 flex-grow flex flex-col">
+                <h3 className="text-xl font-bold mb-3 text-gray-900">
+                  Java Full Stack Certification
+                </h3>
+                <ul className="space-y-2 mb-4 flex-grow">
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Complete pipeline: Frontend → Backend → Database
+                  </li>
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Build real-world web applications
+                  </li>
+                  <li className="flex items-start text-sm text-gray-800">
+                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                    Job-oriented outcomes with placement assistance
+                  </li>
+                </ul>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDownloadClick}
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
+                >
+                  Download Curriculum
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -2720,7 +2904,6 @@ const loadCourses = async () => {
 };
 
 export default App;
-
 
 
 // ==================== ADMIN COMPONENTS START ====================
