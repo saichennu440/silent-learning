@@ -16,11 +16,11 @@ export const fetchCourses = async () => {
 
     if (error) throw error;
 
-    console.log('✅ Fetched courses:', data.length);
+    //console.log('✅ Fetched courses:', data.length);
 
     return data.map(convertToCamelCase);
   } catch (error) {
-    console.error('❌ Error fetching courses:', error);
+    //console.error('❌ Error fetching courses:', error);
     throw error;
   }
 };
@@ -40,7 +40,7 @@ export const fetchCourseById = async (id) => {
 
     return convertToCamelCase(data);
   } catch (error) {
-    console.error('❌ Error fetching course:', error);
+    //console.error('❌ Error fetching course:', error);
     throw error;
   }
 };
@@ -60,7 +60,7 @@ export const fetchCourseBySlug = async (slug) => {
 
     return convertToCamelCase(data);
   } catch (error) {
-    console.error('❌ Error fetching course:', error);
+    //console.error('❌ Error fetching course:', error);
     throw error;
   }
 };
@@ -109,11 +109,11 @@ export const createCourse = async (courseData) => {
 
     if (error) throw error;
 
-    console.log('✅ Course created:', data.id);
+    //console.log('✅ Course created:', data.id);
 
     return convertToCamelCase(data);
   } catch (error) {
-    console.error('❌ Error creating course:', error);
+    //console.error('❌ Error creating course:', error);
     throw error;
   }
 };
@@ -155,11 +155,11 @@ export const updateCourse = async (id, courseData) => {
 
     if (error) throw error;
 
-    console.log('✅ Course updated:', data.id);
+    //console.log('✅ Course updated:', data.id);
 
     return convertToCamelCase(data);
   } catch (error) {
-    console.error('❌ Error updating course:', error);
+    //console.error('❌ Error updating course:', error);
     throw error;
   }
 };
@@ -176,10 +176,10 @@ export const deleteCourse = async (id) => {
 
     if (error) throw error;
 
-    console.log('✅ Course deleted:', id);
+    //console.log('✅ Course deleted:', id);
     return true;
   } catch (error) {
-    console.error('❌ Error deleting course:', error);
+    //console.error('❌ Error deleting course:', error);
     throw error;
   }
 };
@@ -199,7 +199,7 @@ export const searchCourses = async (searchTerm) => {
 
     return data.map(convertToCamelCase);
   } catch (error) {
-    console.error('❌ Error searching courses:', error);
+    //console.error('❌ Error searching courses:', error);
     throw error;
   }
 };
@@ -219,7 +219,7 @@ export const filterCoursesByCategory = async (category) => {
 
     return data.map(convertToCamelCase);
   } catch (error) {
-    console.error('❌ Error filtering courses:', error);
+    //console.error('❌ Error filtering courses:', error);
     throw error;
   }
 };
@@ -235,7 +235,7 @@ const convertToCamelCase = (dbCourse) => {
     try {
       durations = JSON.parse(durations);
     } catch (e) {
-      console.error('Failed to parse durations:', e);
+      //console.error('Failed to parse durations:', e);
       durations = [];
     }
   }

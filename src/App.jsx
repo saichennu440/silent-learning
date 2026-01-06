@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Filter} from 'lucide-react';
-
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star} from 'lucide-react';
+import CourseDetailPage from './CourseDetailPage.jsx';
 import './App.css';
 // Context for global state
 
@@ -12,7 +12,7 @@ import {
   updateCourse as updateCourseDB, 
   deleteCourse as deleteCourseDB 
 } from './services/coursesService';
-import { testConnection } from './config/supabase';
+import {supabase, testConnection } from './config/supabase';
 
 
 const AppContext = createContext(null);
@@ -23,148 +23,149 @@ const useApp = () => {
   return context;
 };
 
+export { useApp };
 
 
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
 
 // Mock course data from brochure
-const mockCourses = [
-  {
-    id: 1,
-    slug: 'data-science-genai-crash',
-    title: 'Data Science & GenAI Crash Course',
-    category: 'Data Science & AI',
-    level: 'Beginner',
-    duration: '2 Months',
-    priceText: 'INR 30,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
-    fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
-    curriculum: [
-      { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
-      { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
-      { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
-      { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
-    ],
-    projects: ['2-3 mini projects', 'Real dataset analysis'],
-    tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
-    outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 2,
-    slug: 'data-science-genai-certificate',
-    title: 'Data Science & GenAI Certificate Program',
-    category: 'Data Science & AI',
-    level: 'Intermediate',
-    duration: '4 Months',
-    priceText: 'INR 65,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
-    fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
-    curriculum: [
-      { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
-      { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
-      { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
-      { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
-      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
-      { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
-    ],
-    projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
-    tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
-    outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
-    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 3,
-    slug: 'data-science-genai-diploma',
-    title: 'Data Science & GenAI Diploma Program',
-    category: 'Data Science & AI',
-    level: 'Advanced',
-    duration: '7 Months',
-    priceText: 'INR 90,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
-    fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
-    curriculum: [
-      { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
-      { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
-      { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
-      { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
-      { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
-      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
-      { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
-    ],
-    projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
-    tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
-    outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 4,
-    slug: 'generative-ai-prompt-engineering',
-    title: 'Generative AI & Prompt Engineering',
-    category: 'Generative AI & LLM Programs',
-    level: 'Intermediate',
-    duration: '3 Months',
-    priceText: 'Coming Soon',
-    status: 'Launching Soon',
-    shortDescription: 'Master prompt engineering and GenAI applications',
-    fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
-    curriculum: [
-      { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
-      { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
-      { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
-    ],
-    projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
-    tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
-    outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 5,
-    slug: 'ai-healthcare',
-    title: 'AI in Healthcare & Life Sciences',
-    category: 'Industry-Specific AI Programs',
-    level: 'Advanced',
-    duration: '5 Months',
-    priceText: 'Coming Soon',
-    status: 'Under Development',
-    shortDescription: 'Apply AI to healthcare challenges and medical data',
-    fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
-    curriculum: [
-      { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
-      { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
-      { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
-    ],
-    projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
-    tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
-    outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 6,
-    slug: 'computer-vision',
-    title: 'Computer Vision & Autonomous Systems',
-    category: 'DeepTech & Emerging Technologies',
-    level: 'Advanced',
-    duration: '6 Months',
-    priceText: 'Coming Soon',
-    status: 'Planned',
-    shortDescription: 'Build intelligent vision systems and autonomous applications',
-    fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
-    curriculum: [
-      { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
-      { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
-      { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
-    ],
-    projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
-    tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
-    outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
-  }
-];
+// const mockCourses = [
+//   {
+//     id: 1,
+//     slug: 'data-science-genai-crash',
+//     title: 'Data Science & GenAI Crash Course',
+//     category: 'Data Science & AI',
+//     level: 'Beginner',
+//     duration: '2 Months',
+//     priceText: 'INR 30,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
+//     fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
+//     curriculum: [
+//       { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
+//       { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
+//       { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
+//       { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
+//     ],
+//     projects: ['2-3 mini projects', 'Real dataset analysis'],
+//     tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
+//     outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
+//     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 2,
+//     slug: 'data-science-genai-certificate',
+//     title: 'Data Science & GenAI Certificate Program',
+//     category: 'Data Science & AI',
+//     level: 'Intermediate',
+//     duration: '4 Months',
+//     priceText: 'INR 65,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
+//     fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
+//     curriculum: [
+//       { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
+//       { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
+//       { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
+//       { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
+//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
+//       { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
+//     ],
+//     projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
+//     tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
+//     outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
+//     image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 3,
+//     slug: 'data-science-genai-diploma',
+//     title: 'Data Science & GenAI Diploma Program',
+//     category: 'Data Science & AI',
+//     level: 'Advanced',
+//     duration: '7 Months',
+//     priceText: 'INR 90,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
+//     fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
+//     curriculum: [
+//       { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
+//       { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
+//       { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
+//       { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
+//       { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
+//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
+//       { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
+//     ],
+//     projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
+//     tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
+//     outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
+//     image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 4,
+//     slug: 'generative-ai-prompt-engineering',
+//     title: 'Generative AI & Prompt Engineering',
+//     category: 'Generative AI & LLM Programs',
+//     level: 'Intermediate',
+//     duration: '3 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Launching Soon',
+//     shortDescription: 'Master prompt engineering and GenAI applications',
+//     fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
+//     curriculum: [
+//       { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
+//       { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
+//       { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
+//     ],
+//     projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
+//     tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
+//     outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
+//     image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 5,
+//     slug: 'ai-healthcare',
+//     title: 'AI in Healthcare & Life Sciences',
+//     category: 'Industry-Specific AI Programs',
+//     level: 'Advanced',
+//     duration: '5 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Under Development',
+//     shortDescription: 'Apply AI to healthcare challenges and medical data',
+//     fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
+//     curriculum: [
+//       { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
+//       { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
+//       { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
+//     ],
+//     projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
+//     tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
+//     outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
+//     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 6,
+//     slug: 'computer-vision',
+//     title: 'Computer Vision & Autonomous Systems',
+//     category: 'DeepTech & Emerging Technologies',
+//     level: 'Advanced',
+//     duration: '6 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Planned',
+//     shortDescription: 'Build intelligent vision systems and autonomous applications',
+//     fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
+//     curriculum: [
+//       { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
+//       { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
+//       { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
+//     ],
+//     projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
+//     tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
+//     outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
+//     image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
+//   }
+// ];
 
 // Stats from brochure
 const stats = [
@@ -202,7 +203,7 @@ const Header = () => {
   const [coursesOpen, setCoursesOpen] = useState(false); // desktop hover state
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false); // mobile sublist
   const [scrolled, setScrolled] = useState(false);
-  const { currentPage, setCurrentPage, openEnquiry, courses, setSelectedCourseDetail } = useApp();
+  const { currentPage, navigateTo, openEnquiry, courses, openCourseDetail } = useApp();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -213,24 +214,27 @@ const Header = () => {
   const navItems = [
     { label: 'Home', page: 'home' },
     { label: 'Technologies', page: 'courses' },
-    { label: 'About', page: 'about' },
+    // { label: 'About', page: 'about' },
     { label: 'FAQs', page: 'faqs' },
     { label: 'Contact', page: 'contact' },
   ];
 
-  const handleCourseClick = (course) => {
-    // set the selected course detail so modal opens on Courses page
-    setSelectedCourseDetail(course);
+   const handleCourseClick = (course) => {
+    // Open the course detail page (routes to /coursedetail/:slugOrId)
+    if (!course) {
+      // fallback: go to courses listing
+      navigateTo('courses');
+      window.history.pushState({}, '', '/courses');
+    } else {
+      openCourseDetail(course);
+    }
 
-    // navigate to Courses page
-    setCurrentPage('courses');
-
-    // close mobile/menu states
+    // close menus
     setIsOpen(false);
     setMobileCoursesOpen(false);
     setCoursesOpen(false);
 
-    // scroll to top of courses area for better UX
+    // scroll to top for UX if needed
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
@@ -248,11 +252,12 @@ const Header = () => {
           <motion.div
             className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
             whileHover={{ scale: 1.05 }}
-            onClick={() => setCurrentPage('home')}
+            onClick={() => navigateTo('home')}
+
           >
             <img
               className="w-28 h-24 object-contain mr-2 inline-block"
-              src="./logo.png"
+              src="/logo.png"
               alt="Salient Learnings Logo"
             />
           </motion.div>
@@ -269,7 +274,7 @@ const Header = () => {
                     onMouseLeave={() => setCoursesOpen(false)}
                   >
                     <button
-                      onClick={() => setCurrentPage('courses')}
+                      onClick={() => navigateTo('courses')}
                       className={`text-sm font-medium transition-colors ${
                         currentPage === item.page
                           ? 'text-blue-600'
@@ -311,7 +316,7 @@ const Header = () => {
                             <div className="mt-2 border-t pt-2">
                               <button
                                 onClick={() => {
-                                  setCurrentPage('courses');
+                                  navigateTo('courses');
                                   setCoursesOpen(false);
                                 }}
                                 className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:underline"
@@ -332,7 +337,7 @@ const Header = () => {
                 <button
                   key={item.page}
                   onClick={() => {
-                    setCurrentPage(item.page);
+                    navigateTo(item.page);
                     setCoursesOpen(false);
                   }}
                   className={`text-sm font-medium transition-colors ${
@@ -413,7 +418,7 @@ const Header = () => {
                   <button
                     key={item.page}
                     onClick={() => {
-                      setCurrentPage(item.page);
+                      navigateTo(item.page);
                       setIsOpen(false);
                       setMobileCoursesOpen(false);
                     }}
@@ -446,7 +451,7 @@ const Header = () => {
 
 // Hero Section
 const Hero = () => {
-  const { setCurrentPage, openEnquiry } = useApp();
+  const { navigateTo, openEnquiry } = useApp();
 
   return (
     <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -497,7 +502,7 @@ const Hero = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setCurrentPage('courses')}
+              onClick={() => navigateTo('courses')}
               className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
             >
               Explore Programs
@@ -736,190 +741,190 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
 };
 
 
-// Course Detail Modal
-const CourseDetailModal = ({ course, selectedDurationIndex = 0, onClose }) => {
-  if (!course) return null;
- const { setCurrentPage, openEnquiry } = useApp();
-const [selectedIdx, setSelectedIdx] = useState(0);
- const durations = React.useMemo(() => {
-    if (!course) return [];
-    if (Array.isArray(course.durations) && course.durations.length > 0) {
-      return course.durations.map((d) =>
-        typeof d === 'string'
-          ? { label: d, priceText: course.priceText || '' }
-          : { label: d.label || '', priceText: d.priceText || '' }
-      );
-    }
-    // fallback single option
-    return [{ label: course.duration || '', priceText: course.priceText || '' }];
-  }, [course]);
+// // Course Detail Modal
+// const CourseDetailModal = ({ course, selectedDurationIndex = 0, onClose }) => {
+//   if (!course) return null;
+//  const { navigateTo, openEnquiry } = useApp();
+// const [selectedIdx, setSelectedIdx] = useState(0);
+//  const durations = React.useMemo(() => {
+//     if (!course) return [];
+//     if (Array.isArray(course.durations) && course.durations.length > 0) {
+//       return course.durations.map((d) =>
+//         typeof d === 'string'
+//           ? { label: d, priceText: course.priceText || '' }
+//           : { label: d.label || '', priceText: d.priceText || '' }
+//       );
+//     }
+//     // fallback single option
+//     return [{ label: course.duration || '', priceText: course.priceText || '' }];
+//   }, [course]);
 
-  const current = durations[selectedIdx] || { label: course?.duration || '', priceText: course?.priceText || '' };
-  // helper to safely read price
-const currentDuration =
-  course?.durations?.[selectedDurationIndex]
-  || course?.durations?.[0]
-  || null;
+//   const current = durations[selectedIdx] || { label: course?.duration || '', priceText: course?.priceText || '' };
+//   // helper to safely read price
+// const currentDuration =
+//   course?.durations?.[selectedDurationIndex]
+//   || course?.durations?.[0]
+//   || null;
 
 
-  const displayedDuration = currentDuration?.label || course?.duration || '—';
-  const displayedPrice = currentDuration?.priceText || course?.priceText || '—';
+//   const displayedDuration = currentDuration?.label || course?.duration || '—';
+//   const displayedPrice = currentDuration?.priceText || course?.priceText || '—';
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ type: 'spring', damping: 25 }}
-        className="bg-white rounded-2xl max-w-4xl w-full my-8 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative">
-          <img
-            src={course.image}
-            alt={course.title}
-            className="w-full h-64 object-cover rounded-t-2xl"
-          />
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+//   return (
+//     <motion.div
+//       initial={{ opacity: 0 }}
+//       animate={{ opacity: 1 }}
+//       exit={{ opacity: 0 }}
+//       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+//       onClick={onClose}
+//     >
+//       <motion.div
+//         initial={{ scale: 0.9, opacity: 0 }}
+//         animate={{ scale: 1, opacity: 1 }}
+//         exit={{ scale: 0.9, opacity: 0 }}
+//         transition={{ type: 'spring', damping: 25 }}
+//         className="bg-white rounded-2xl max-w-4xl w-full my-8 shadow-2xl"
+//         onClick={(e) => e.stopPropagation()}
+//       >
+//         <div className="relative">
+//           <img
+//             src={course.image}
+//             alt={course.title}
+//             className="w-full h-64 object-cover rounded-t-2xl"
+//           />
+//           <button
+//             onClick={onClose}
+//             className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100"
+//           >
+//             <X className="w-6 h-6" />
+//           </button>
+//         </div>
 
-        <div className="p-8 max-h-[70vh] overflow-y-auto">
-          <div className="mb-4">
-            <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">
-              {course.category}
-            </span>
-          </div>
+//         <div className="p-8 max-h-[70vh] overflow-y-auto">
+//           <div className="mb-4">
+//             <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">
+//               {course.category}
+//             </span>
+//           </div>
 
-          <h2 className="text-3xl font-bold mb-4 text-blue-900">{course.title}</h2>
+//           <h2 className="text-3xl font-bold mb-4 text-blue-900">{course.title}</h2>
 
-          <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500 items-center">
-          <span className="flex items-center">
-            <Award className="w-4 h-4 mr-1" /> {course?.level}
-          </span>
+//           <div className="flex flex-wrap gap-2 mb-4 text-sm text-gray-500 items-center">
+//           <span className="flex items-center">
+//             <Award className="w-4 h-4 mr-1" /> {course?.level}
+//           </span>
 
-          <span>•</span>
+//           <span>•</span>
 
-          {/* Duration display / selector */}
-          {durations.length > 1 ? (
-            <div className="flex items-center gap-2">
-              <select
-                aria-label="Select duration"
-                value={selectedIdx}
-                onChange={(e) => setSelectedIdx(Number(e.target.value))}
-                className="px-2 py-1 border border-gray-300 rounded-md text-sm"
-              >
-                {durations.map((d, idx) => (
-                  <option key={idx} value={idx}>
-                    {d.label || `Option ${idx + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <span>{current.label || '—'}</span>
-          )}
+//           {/* Duration display / selector */}
+//           {durations.length > 1 ? (
+//             <div className="flex items-center gap-2">
+//               <select
+//                 aria-label="Select duration"
+//                 value={selectedIdx}
+//                 onChange={(e) => setSelectedIdx(Number(e.target.value))}
+//                 className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+//               >
+//                 {durations.map((d, idx) => (
+//                   <option key={idx} value={idx}>
+//                     {d.label || `Option ${idx + 1}`}
+//                   </option>
+//                 ))}
+//               </select>
+//             </div>
+//           ) : (
+//             <span>{current.label || '—'}</span>
+//           )}
 
-          <span>•</span>
+//           <span>•</span>
 
-          <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
-        </div>
+//           <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
+//         </div>
 
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-3 text-gray-900">Overview</h3>
-            <p className="text-gray-800 leading-relaxed">{course.fullDescription}</p>
-          </div>
+//           <div className="mb-8">
+//             <h3 className="text-xl font-bold mb-3 text-gray-900">Overview</h3>
+//             <p className="text-gray-800 leading-relaxed">{course.fullDescription}</p>
+//           </div>
 
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">Curriculum</h3>
-            <div className="space-y-4">
-              {course.curriculum.map((module, index) => (
-                <div key={index} className="border-l-4 border-blue-600 pl-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">{module.title}</h4>
-                  <ul className="space-y-1">
-                    {module.topics.map((topic, idx) => (
-                      <li key={idx} className="text-gray-800 flex items-start">
-                        <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-1" />
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
+//           <div className="mb-8">
+//             <h3 className="text-xl font-bold mb-4 text-gray-900">Curriculum</h3>
+//             <div className="space-y-4">
+//               {course.curriculum.map((module, index) => (
+//                 <div key={index} className="border-l-4 border-blue-600 pl-4">
+//                   <h4 className="font-semibold text-gray-900 mb-2">{module.title}</h4>
+//                   <ul className="space-y-1">
+//                     {module.topics.map((topic, idx) => (
+//                       <li key={idx} className="text-gray-800 flex items-start">
+//                         <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-1" />
+//                         {topic}
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
 
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-3 text-gray-900">Projects & Capstone</h3>
-            <ul className="space-y-2">
-              {course.projects.map((project, index) => (
-                <li key={index} className="flex items-start text-gray-800">
-                  <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                  {project}
-                </li>
-              ))}
-            </ul>
-          </div>
+//           <div className="mb-8">
+//             <h3 className="text-xl font-bold mb-3 text-gray-900">Projects & Capstone</h3>
+//             <ul className="space-y-2">
+//               {course.projects.map((project, index) => (
+//                 <li key={index} className="flex items-start text-gray-800">
+//                   <Check className="w-5 h-5 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+//                   {project}
+//                 </li>
+//               ))}
+//             </ul>
+//           </div>
 
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-3 text-gray-900">Tools & Technologies</h3>
-            <div className="flex flex-wrap gap-2">
-              {course.tools.map((tool, index) => (
-                <span
-                  key={index}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          </div>
+//           <div className="mb-8">
+//             <h3 className="text-xl font-bold mb-3 text-gray-900">Tools & Technologies</h3>
+//             <div className="flex flex-wrap gap-2">
+//               {course.tools.map((tool, index) => (
+//                 <span
+//                   key={index}
+//                   className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+//                 >
+//                   {tool}
+//                 </span>
+//               ))}
+//             </div>
+//           </div>
 
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-3 text-gray-900">Career Outcomes</h3>
-            <ul className="space-y-2">
-              {course.outcomes.map((outcome, index) => (
-                <li key={index} className="flex items-start text-gray-800">
-                  <Award className="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" />
-                  {outcome}
-                </li>
-              ))}
-            </ul>
-          </div>
+//           <div className="mb-8">
+//             <h3 className="text-xl font-bold mb-3 text-gray-900">Career Outcomes</h3>
+//             <ul className="space-y-2">
+//               {course.outcomes.map((outcome, index) => (
+//                 <li key={index} className="flex items-start text-gray-800">
+//                   <Award className="w-5 h-5 mr-2 text-purple-600 flex-shrink-0 mt-0.5" />
+//                   {outcome}
+//                 </li>
+//               ))}
+//             </ul>
+//           </div>
 
-          <div className="flex gap-4">
-            <button
-              onClick={() =>openEnquiry() }
+//           <div className="flex gap-4">
+//             <button
+//               onClick={() =>openEnquiry() }
                
-                // This would open enquiry modal in actual implementation
+//                 // This would open enquiry modal in actual implementation
               
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-            >
-              Apply Now
-            </button>
-            <button
-            onClick={() => openEnquiry()}
-            className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-          >
-              Contact Advisor
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
+//               className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+//             >
+//               Apply Now
+//             </button>
+//             <button
+//             onClick={() => openEnquiry()}
+//             className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+//           >
+//               Contact Advisor
+//             </button>
+//           </div>
+//         </div>
+//       </motion.div>
+//     </motion.div>
+//   );
+// };
 
 
 const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
@@ -1121,10 +1126,10 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
           }
         }, 2000);
       } else {
-        console.error("Formspree submit returned non-ok:", response.status);
+        //console.error("Formspree submit returned non-ok:", response.status);
       }
     } catch (error) {
-      console.error("Enquiry failed", error);
+      //console.error("Enquiry failed", error);
     }
   };
 
@@ -1321,12 +1326,14 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
 
 // Courses Page
 const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
-  const { openEnquiry, setSelectedCourse, courses } = useApp();
+  const { openEnquiry, setSelectedCourse, courses, openCourseDetail } = useApp();
   const [filters, setFilters] = useState({
     level: 'All',
     category: 'All',
     status: 'All'
   });
+
+  
 
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
   const categories = ['All', 'Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
@@ -1340,7 +1347,7 @@ const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
   });
 
   const handleLearnMore = (course) => {
-    setSelectedCourseDetail(course);
+    openCourseDetail(course);
   };
 
   const handleEnquiry = (course) => {
@@ -1444,79 +1451,74 @@ const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
       </div>
 
       <AnimatePresence>
-        {selectedCourseDetail && (
-          <CourseDetailModal
-            course={selectedCourseDetail}
-            onClose={() => setSelectedCourseDetail(null)}
-          />
-        )}
+        
       </AnimatePresence>
     </div>
   );
 };
 
-// About Page
-const AboutPage = () => {
-  return (
-    <div className="pt-24 pb-20 px-4 bg-white min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-12"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-blue-900">About Salient Learnings</h1>
-          <p className="text-xl text-gray-800 leading-relaxed">
-            Salient Learnings is a future-focused education platform dedicated to building industry-ready talent in AI, Data Science, Generative AI & Deep Technologies through mentor-led, hands-on learning.
-          </p>
-        </motion.div>
+// // About Page
+// const AboutPage = () => {
+//   return (
+//     <div className="pt-24 pb-20 px-4 bg-white min-h-screen">
+//       <div className="max-w-4xl mx-auto">
+//         <motion.div
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           className="mb-12"
+//         >
+//           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-blue-900">About Salient Learnings</h1>
+//           <p className="text-xl text-gray-800 leading-relaxed">
+//             Salient Learnings is a future-focused education platform dedicated to building industry-ready talent in AI, Data Science, Generative AI & Deep Technologies through mentor-led, hands-on learning.
+//           </p>
+//         </motion.div>
 
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12"
-        >
-          <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Vision</h2>
-          <p className="text-lg text-gray-800 leading-relaxed">
-            To become a leading AI & DeepTech talent ecosystem, shaping innovators, professionals, and technology leaders globally.
-          </p>
-        </motion.section>
+//         <motion.section
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           transition={{ delay: 0.2 }}
+//           className="mb-12"
+//         >
+//           <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Vision</h2>
+//           <p className="text-lg text-gray-800 leading-relaxed">
+//             To become a leading AI & DeepTech talent ecosystem, shaping innovators, professionals, and technology leaders globally.
+//           </p>
+//         </motion.section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-12"
-        >
-          <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Mission</h2>
-          <ul className="space-y-3 text-lg text-gray-800">
-            <li className="flex items-start">
-              <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
-              Bridge academia and industry with practical, outcome-focused learning
-            </li>
-            <li className="flex items-start">
-              <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
-              Deliver project-driven education that prepares learners for real-world challenges
-            </li>
-            <li className="flex items-start">
-              <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
-              Enable real employability and foster innovation in emerging technologies
-            </li>
-          </ul>
-        </motion.section>
+//         <motion.section
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           transition={{ delay: 0.3 }}
+//           className="mb-12"
+//         >
+//           <h2 className="text-3xl font-bold mb-4 text-blue-900">Our Mission</h2>
+//           <ul className="space-y-3 text-lg text-gray-800">
+//             <li className="flex items-start">
+//               <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
+//               Bridge academia and industry with practical, outcome-focused learning
+//             </li>
+//             <li className="flex items-start">
+//               <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
+//               Deliver project-driven education that prepares learners for real-world challenges
+//             </li>
+//             <li className="flex items-start">
+//               <Check className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1" />
+//               Enable real employability and foster innovation in emerging technologies
+//             </li>
+//           </ul>
+//         </motion.section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+//         <motion.section
+//           initial={{ opacity: 0, y: 20 }}
+//           animate={{ opacity: 1, y: 0 }}
+//           transition={{ delay: 0.4 }}
+//         >
          
-        </motion.section>
-      </div>
-    </div>
-  );
-};
+//         </motion.section>
+//       </div>
+//     </div>
+//   );
+// };
 
 // FAQs Page
 const FAQsPage = () => {
@@ -1763,11 +1765,11 @@ const ContactPage = () => {
           setWhatsappWarning('');
         }, 3000);
       } else {
-        console.error("Formspree submit returned non-ok:", response.status);
+        //console.error("Formspree submit returned non-ok:", response.status);
         alert("Failed to submit. Please try again.");
       }
     } catch (error) {
-      console.error("Enquiry failed", error);
+      //console.error("Enquiry failed", error);
       alert("An error occurred. Please try again.");
     }
   };
@@ -2024,14 +2026,12 @@ const ContactPage = () => {
   );
 };
 
-// Home Page
+// HomePage.jsx - Update Featured Programs Section
 const HomePage = () => {
-  const { openEnquiry, enquiryOpen } = useApp(); // get openEnquiry and enquiryOpen from context
+  const { openEnquiry, featuredPrograms } = useApp();
 
-  // The brochure file/url you want to protect behind the form:
   const BROCHURE_URL = '/DSAI_Generic_Brochure.pdf';
 
-  // helper to programmatically download a file (works for same-origin or direct links)
   const triggerDownload = (url) => {
     const a = document.createElement('a');
     a.href = url;
@@ -2041,45 +2041,30 @@ const HomePage = () => {
     a.remove();
   };
 
-  // Called when the "Download Full Curriculum" button is clicked
-  const handleDownloadClick = () => {
-    // store intent
-    sessionStorage.setItem('pendingDownloadUrl', BROCHURE_URL);
-
-    // open the SAME enquiry form
+  const handleDownloadClick = (brochureUrl) => {
+    const downloadUrl = brochureUrl || BROCHURE_URL;
+    sessionStorage.setItem('pendingDownloadUrl', downloadUrl);
     openEnquiry({ downloadRequest: true });
   };
 
-  // When EnquiryModal successfully submits the form it should dispatch:
-  // window.dispatchEvent(new CustomEvent('enquiry-submitted', { detail: { success: true } }))
-  // ✅ ONLY listens for SUCCESSFUL SUBMISSION
   useEffect(() => {
     const onSubmitSuccess = () => {
       const pending = sessionStorage.getItem('pendingDownloadUrl');
       if (!pending) return;
-
       triggerDownload(pending);
       sessionStorage.removeItem('pendingDownloadUrl');
     };
 
     window.addEventListener('enquiry-submitted-success', onSubmitSuccess);
-    return () =>
-      window.removeEventListener('enquiry-submitted-success', onSubmitSuccess);
+    return () => window.removeEventListener('enquiry-submitted-success', onSubmitSuccess);
   }, []);
-
-  // Fallback: if enquiry modal closes and there is a pending download, trigger it.
-  // This fallback exists in case EnquiryModal does NOT dispatch 'enquiry-submitted'.
-  // Note: this will also fire if the modal was closed without submission. That's why
-  // the recommended approach is to make EnquiryModal dispatch the custom event on submit.
- 
 
   return (
     <div>
       <Hero />
       <WhySalient />
       
-      {/* Featured Program Section */}
-    {/* Featured Program Section */}
+      {/* Featured Programs Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -2097,139 +2082,52 @@ const HomePage = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Card 1 - Data Science & AI */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
-            >
-              <div className="relative h-48">
-                <img
-                  src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop"
-                  alt="Data Science & AI"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6 flex-grow flex flex-col">
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
-                  Data Science & AI Certification
-                </h3>
-                <ul className="space-y-2 mb-4 flex-grow">
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Complete pipeline: Analytics → ML → DL → GenAI
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Build real projects including an AI Chatbot
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Job-oriented outcomes with placement assistance
-                  </li>
-                </ul>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDownloadClick}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
-                >
-                  Download Curriculum
-                </motion.button>
-              </div>
-            </motion.div>
-
-            {/* Card 2 - Add your second program */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
-            >
-              <div className="relative h-48">
-                <img
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop"
-                  alt="Program 2"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6 flex-grow flex flex-col">
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
-                       Python & Generative AI Certification
-                </h3>
-                <ul className="space-y-2 mb-4 flex-grow">
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Master Python programming from basics to advanced
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Build projects using Generative AI models
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Job-oriented outcomes with placement assistance
-                  </li>
-                </ul>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDownloadClick}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
-                >
-                  Download Curriculum
-                </motion.button>
-              </div>
-            </motion.div>
-
-            {/* Card 3 - Add your third program */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
-            >
-              <div className="relative h-48">
-                <img
-                  src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&auto=format&fit=crop"
-                  alt="Program 3"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6 flex-grow flex flex-col">
-                <h3 className="text-xl font-bold mb-3 text-gray-900">
-                  Java Full Stack Certification
-                </h3>
-                <ul className="space-y-2 mb-4 flex-grow">
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Complete pipeline: Frontend → Backend → Database
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Build real-world web applications
-                  </li>
-                  <li className="flex items-start text-sm text-gray-800">
-                    <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
-                    Job-oriented outcomes with placement assistance
-                  </li>
-                </ul>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDownloadClick}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
-                >
-                  Download Curriculum
-                </motion.button>
-              </div>
-            </motion.div>
+            {featuredPrograms.map((program, index) => (
+              <motion.div
+                key={program.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
+              >
+                <div className="relative h-48">
+                  <img
+                    src={program.image_url}
+                    alt={program.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-6 flex-grow flex flex-col">
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">
+                    {program.title}
+                  </h3>
+                  {program.short_description && (
+                    <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>
+                  )}
+                  <ul className="space-y-2 mb-4 flex-grow">
+                    {program.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start text-sm text-gray-800">
+                        <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleDownloadClick(program.brochure_url)}
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
+                  >
+                    Download Curriculum
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
+
 
       {/* Learning Experience Section */}
       <section className="py-20 px-4 bg-white">
@@ -2289,18 +2187,135 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-4 bg-gradient-to-br from-purple-50 to-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
+              What Our Students Say
+            </h2>
+            <p className="text-xl text-gray-800 max-w-3xl mx-auto">
+              Real stories from learners who transformed their careers with us
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Priya Sharma',
+                role: 'Data Scientist at TCS',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop',
+                testimonial: 'The Data Science program at Salient Learnings was transformative. The hands-on projects and mentor support helped me land my dream job within 3 months of completion.',
+                rating: 5
+              },
+              {
+                name: 'Rahul Verma',
+                role: 'AI Engineer at Wipro',
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop',
+                testimonial: 'Best investment in my career! The instructors are industry experts who provide real-world insights. The GenAI modules were particularly impressive.',
+                rating: 5
+              },
+              {
+                name: 'Anjali Reddy',
+                role: 'Machine Learning Engineer at Infosys',
+                image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&auto=format&fit=crop',
+                testimonial: 'From theory to deployment, this course covered everything. The placement support team was extremely helpful throughout my job search journey.',
+                rating: 5
+              },
+              {
+                name: 'Vikram Patel',
+                role: 'Python Developer at Accenture',
+                image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop',
+                testimonial: 'The Python course exceeded my expectations. Clear explanations, practical examples, and excellent support from mentors made learning enjoyable and effective.',
+                rating: 5
+              },
+              {
+                name: 'Sneha Iyer',
+                role: 'Full Stack Developer at HCL',
+                image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&auto=format&fit=crop',
+                testimonial: 'Java Full Stack program gave me the confidence to build end-to-end applications. The curriculum is well-structured and industry-relevant.',
+                rating: 5
+              },
+              {
+                name: 'Arjun Mehta',
+                role: 'DevOps Engineer at Tech Mahindra',
+                image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop',
+                testimonial: 'Outstanding DevOps training! The hands-on labs and real-world scenarios prepared me well for my current role. Highly recommend Salient Learnings!',
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-xl shadow-lg p-6 flex flex-col"
+              >
+                {/* Rating Stars */}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+
+                {/* Testimonial Text */}
+                <p className="text-gray-700 mb-6 flex-grow italic">
+                  "{testimonial.testimonial}"
+                </p>
+
+                {/* Author Info */}
+                <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => openEnquiry()}
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg"
+            >
+              Start Your Journey Today
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
     </div>
   );
 };
 
 // Footer Component
 const Footer = () => {
-  const { setCurrentPage, courses, setSelectedCourseDetail } = useApp();
+  const { navigateTo, courses, setSelectedCourseDetail } = useApp();
 
   const handleCourseClick = (course) => {
     // open courses page and show course detail modal
     if (setSelectedCourseDetail) setSelectedCourseDetail(course);
-    setCurrentPage('courses');
+    navigateTo('courses');
     // small scroll for UX
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
@@ -2339,22 +2354,22 @@ const Footer = () => {
                 // fallback items if courses not loaded yet
                 <>
                   <li>
-                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
                       Data Science & AI
                     </button>
                   </li>
                   <li>
-                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
                       Generative AI
                     </button>
                   </li>
                   <li>
-                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
                       Industry AI
                     </button>
                   </li>
                   <li>
-                    <button onClick={() => setCurrentPage('courses')} className="hover:text-white transition-colors">
+                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
                       DeepTech
                     </button>
                   </li>
@@ -2367,17 +2382,17 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <button onClick={() => setCurrentPage('about')} className="hover:text-white transition-colors">
+                {/* <button onClick={() => navigateTo('about')} className="hover:text-white transition-colors">
                   About Us
-                </button>
+                </button> */}
               </li>
               <li>
-                <button onClick={() => setCurrentPage('faqs')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('faqs')} className="hover:text-white transition-colors">
                   FAQs
                 </button>
               </li>
               <li>
-                <button onClick={() => setCurrentPage('contact')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('contact')} className="hover:text-white transition-colors">
                   Contact
                 </button>
               </li>
@@ -2415,7 +2430,6 @@ const Footer = () => {
   );
 };
 
-
 //App Component
 const App = () => {
   const [currentPage, setCurrentPage] = useState("home");
@@ -2433,154 +2447,117 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ---------- Helper: merge DB data with local cache ----------
-  // const mergeDbWithCache = (dbList = []) => {
-  //   // read local cache
-  //   let cache = [];
-  //   try {
-  //     const raw = localStorage.getItem("courses_cache");
-  //     if (raw) cache = JSON.parse(raw);
-  //   } catch (err) {
-  //     console.warn("Invalid courses_cache in localStorage:", err);
-  //   }
-  //   const cacheById = new Map((cache || []).map((c) => [String(c.id), c]));
-
-  //   // Merge for each DB item: if critical fields are missing in DB,
-  //   // prefer cached values so UI edits aren't lost on refresh.
-  //   return dbList.map((item) => {
-  //     const id = String(item.id ?? "");
-  //     const cached = cacheById.get(id);
-  //     if (!cached) return item;
-
-  //     const merged = { ...item };
-
-  //     // Preserve durations/pricing if DB misses them
-  //     if ((!merged.durations || merged.durations.length === 0) && cached.durations) {
-  //       merged.durations = cached.durations;
-  //     }
-
-  //     // Preserve legacy single fields if missing
-  //     if ((!merged.duration || merged.duration === "") && cached.duration) {
-  //       merged.duration = cached.duration;
-  //     }
-  //     if ((!merged.priceText || merged.priceText === "") && cached.priceText) {
-  //       merged.priceText = cached.priceText;
-  //     }
-
-  //     // Preserve short/full descriptions if DB omits them
-  //     if ((!merged.shortDescription || merged.shortDescription === "") && cached.shortDescription) {
-  //       merged.shortDescription = cached.shortDescription;
-  //     }
-  //     if ((!merged.fullDescription || merged.fullDescription === "") && cached.fullDescription) {
-  //       merged.fullDescription = cached.fullDescription;
-  //     }
-
-  //     // Preserve title, image, category, level, status if DB omits or empty
-  //     if ((!merged.title || merged.title === "") && cached.title) {
-  //       merged.title = cached.title;
-  //     }
-  //     if ((!merged.image || merged.image === "") && cached.image) {
-  //       merged.image = cached.image;
-  //     }
-  //     if ((!merged.category || merged.category === "") && cached.category) {
-  //       merged.category = cached.category;
-  //     }
-  //     if ((!merged.level || merged.level === "") && cached.level) {
-  //       merged.level = cached.level;
-  //     }
-  //     if ((!merged.status || merged.status === "") && cached.status) {
-  //       merged.status = cached.status;
-  //     }
-
-  //     // Preserve arrays (curriculum, projects, tools, outcomes)
-  //     if ((!merged.curriculum || merged.curriculum.length === 0) && cached.curriculum) {
-  //       merged.curriculum = cached.curriculum;
-  //     }
-  //     if ((!merged.projects || merged.projects.length === 0) && cached.projects) {
-  //       merged.projects = cached.projects;
-  //     }
-  //     if ((!merged.tools || merged.tools.length === 0) && cached.tools) {
-  //       merged.tools = cached.tools;
-  //     }
-  //     if ((!merged.outcomes || merged.outcomes.length === 0) && cached.outcomes) {
-  //       merged.outcomes = cached.outcomes;
-  //     }
-
-  //     return merged;
-  //   });
-  // };
-
+  // Featured Programs state
+  const [featuredPrograms, setFeaturedPrograms] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
 
   const mapSupabaseCourse = (c) => ({
-  ...c,
+    ...c,
 
-  // map snake_case → camelCase
-  priceText: c.price_text,
-  shortDescription: c.short_description,
-  fullDescription: c.full_description,
+    // map snake_case → camelCase
+    priceText: c.price_text,
+    shortDescription: c.short_description,
+    fullDescription: c.full_description,
 
-  // duration already matches but keep safe fallback
-  durations: Array.isArray(c.durations) && c.durations.length
-    ? c.durations
-    : c.duration
-      ? [{ label: c.duration, priceText: c.price_text || '' }]
-      : [],
+    // duration already matches but keep safe fallback
+    durations: Array.isArray(c.durations) && c.durations.length
+      ? c.durations
+      : c.duration
+        ? [{ label: c.duration, priceText: c.price_text || '' }]
+        : [],
 
-  // safety defaults (prevent blank UI)
-  title: c.title || '',
-  category: c.category || '',
-  level: c.level || '',
-  status: c.status || '',
-  image: c.image || '',
-});
+    // safety defaults (prevent blank UI)
+    title: c.title || '',
+    category: c.category || '',
+    level: c.level || '',
+    status: c.status || '',
+    image: c.image || '',
+  });
 
-
-  
   // Load courses from database on mount (updated with localStorage cache fallback)
-const loadCourses = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-
-    // ✅ Always load from database first
-    const dbCourses = await fetchCourses();
-
-    if (Array.isArray(dbCourses) && dbCourses.length > 0) {
-      setCourses(dbCourses);
-
-      // cache only for offline use
-      localStorage.setItem('courses_cache', JSON.stringify(dbCourses));
-
-      console.log('📚 Loaded courses from Supabase:', dbCourses.length);
-      return;
-    }
-
-    throw new Error('Empty DB response');
-
-  } catch (err) {
-    console.warn('⚠️ DB load failed. Using local cache.');
-
+  const loadCourses = async () => {
     try {
-      const cached = localStorage.getItem('courses_cache');
-      if (cached) {
-        setCourses(JSON.parse(cached));
-        console.log('📚 Loaded courses from cache');
-      } else {
+      setLoading(true);
+      setError(null);
+
+      // ✅ Always load from database first
+      const dbCourses = await fetchCourses();
+
+      if (Array.isArray(dbCourses) && dbCourses.length > 0) {
+        setCourses(dbCourses);
+
+        // cache only for offline use
+        localStorage.setItem('courses_cache', JSON.stringify(dbCourses));
+
+        //console.log('📚 Loaded courses from Supabase:', dbCourses.length);
+        return;
+      }
+
+      throw new Error('Empty DB response');
+
+    } catch (err) {
+      //console.warn('⚠️ DB load failed. Using local cache.');
+
+      try {
+        const cached = localStorage.getItem('courses_cache');
+        if (cached) {
+          setCourses(JSON.parse(cached));
+          //console.log('📚 Loaded courses from cache');
+        } else {
+          setCourses([]);
+        }
+      } catch (cacheErr) {
+        //console.error('❌ Cache error:', cacheErr);
         setCourses([]);
       }
-    } catch (cacheErr) {
-      console.error('❌ Cache error:', cacheErr);
-      setCourses([]);
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
+  // Load featured programs from database
+  const loadFeaturedPrograms = async () => {
+    try {
+      setFeaturedLoading(true);
 
-  // Load courses on mount
+      const { data, error } = await supabase
+        .from('featured_programs')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+
+      setFeaturedPrograms(data || []);
+      
+      // Cache for offline use
+      localStorage.setItem('featured_programs_cache', JSON.stringify(data || []));
+      
+      //console.log('⭐ Loaded featured programs from Supabase:', data?.length || 0);
+    } catch (err) {
+      //console.warn('⚠️ Featured programs DB load failed. Using local cache.', err);
+
+      try {
+        const cached = localStorage.getItem('featured_programs_cache');
+        if (cached) {
+          setFeaturedPrograms(JSON.parse(cached));
+          //console.log('⭐ Loaded featured programs from cache');
+        } else {
+          setFeaturedPrograms([]);
+        }
+      } catch (cacheErr) {
+        //console.error('❌ Featured programs cache error:', cacheErr);
+        setFeaturedPrograms([]);
+      }
+    } finally {
+      setFeaturedLoading(false);
+    }
+  };
+
+  // Load courses and featured programs on mount
   useEffect(() => {
     loadCourses();
+    loadFeaturedPrograms();
     testConnection(); // Test Supabase connection
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -2590,27 +2567,56 @@ const loadCourses = async () => {
     try {
       localStorage.setItem("courses_cache", JSON.stringify(list));
     } catch (err) {
-      console.warn("Could not update courses cache", err);
+      //console.warn("Could not update courses cache", err);
     }
   };
+
+  // Navigation helper - create the navigation function
+  const createNavigateTo = useCallback(
+    (routeOrPath) => {
+      if (!routeOrPath) return;
+
+      let route = routeOrPath.startsWith("/")
+        ? routeOrPath.slice(1)
+        : routeOrPath;
+
+      if (route === "" || route === "/") route = "home";
+
+      if (!validPages.includes(route)) {
+        route = "home";
+      }
+
+      if (route === "admin" && isAdminAuthenticated) {
+        createNavigateTo("admin-dashboard");
+        window.history.pushState({}, "", "/admin-dashboard");
+        return;
+      }
+
+      setCurrentPage(route);
+
+      window.history.pushState(
+        {},
+        "",
+        route === "home" ? "/" : `/${route}`
+      );
+    },
+    [isAdminAuthenticated]
+  );
 
   // Add course (tries DB -> falls back to local)
   const addCourse = async (course) => {
     try {
-      const created = await createCourse(course); // may return created object
-      // Combine DB return (if any) with original data to ensure durations preserved
+      const created = await createCourse(course);
       const finalCourse = mapSupabaseCourse({
         ...(created || {}),
         ...course,
         id: (created && created.id) || course.id || Date.now().toString(),
       });
 
-      // ensure durations -> legacy fields
       if (Array.isArray(finalCourse.durations) && finalCourse.durations.length > 0) {
         finalCourse.duration = finalCourse.duration || finalCourse.durations[0].label || "";
         finalCourse.priceText = finalCourse.priceText || finalCourse.durations[0].priceText || "";
       } else {
-        // If DB doesn't have durations but we provided them, ensure finalCourse carries them
         if (course.durations && course.durations.length > 0) {
           finalCourse.durations = course.durations;
           finalCourse.duration = finalCourse.duration || course.durations[0].label || "";
@@ -2618,18 +2624,16 @@ const loadCourses = async () => {
         }
       }
 
-      // ensure descriptions preserved from payload or created result
       finalCourse.shortDescription = finalCourse.shortDescription || course.shortDescription || "";
       finalCourse.fullDescription = finalCourse.fullDescription || course.fullDescription || "";
 
       const updated = [finalCourse, ...courses];
       setCourses(updated);
       persistCoursesToCache(updated);
-      console.log("✅ Course added to database (or cached locally).");
+      //console.log("✅ Course added to database (or cached locally).");
       return finalCourse;
     } catch (err) {
-      console.error("Error adding course to DB:", err);
-      // fallback: persist locally with generated id
+      //console.error("Error adding course to DB:", err);
       const fallbackCourse = {
         ...course,
         id: course.id || Date.now().toString(),
@@ -2642,7 +2646,6 @@ const loadCourses = async () => {
             ? course.durations[0].priceText
             : course.priceText,
       };
-      // ensure descriptions are present
       fallbackCourse.shortDescription = fallbackCourse.shortDescription || course.shortDescription || "";
       fallbackCourse.fullDescription = fallbackCourse.fullDescription || course.fullDescription || "";
 
@@ -2657,31 +2660,27 @@ const loadCourses = async () => {
   const updateCourse = async (updatedCourse) => {
     try {
       const updatedFromDB = await updateCourseDB(updatedCourse.id, updatedCourse);
-      // Merge DB result with updatedCourse to preserve durations if needed
       const merged = { ...(updatedFromDB || {}), ...updatedCourse };
 
       if (Array.isArray(merged.durations) && merged.durations.length > 0) {
         merged.duration = merged.duration || merged.durations[0].label || "";
         merged.priceText = merged.priceText || merged.durations[0].priceText || "";
       } else if (Array.isArray(updatedCourse.durations) && updatedCourse.durations.length > 0) {
-        // ensure durations from the updatedCourse are persisted in cache/UI
         merged.durations = updatedCourse.durations;
         merged.duration = merged.duration || updatedCourse.durations[0].label || "";
         merged.priceText = merged.priceText || updatedCourse.durations[0].priceText || "";
       }
 
-      // ensure descriptions preserved
       merged.shortDescription = merged.shortDescription || updatedCourse.shortDescription || "";
       merged.fullDescription = merged.fullDescription || updatedCourse.fullDescription || "";
 
       const newList = courses.map((c) => (String(c.id) === String(merged.id) ? merged : c));
       setCourses(newList);
       persistCoursesToCache(newList);
-      console.log("✅ Course updated in database (or cached locally).");
+      //console.log("✅ Course updated in database (or cached locally).");
       return merged;
     } catch (err) {
-      console.error("Error updating course:", err);
-      // fallback: update local cache
+      //console.error("Error updating course:", err);
       const merged = { ...updatedCourse };
       if (Array.isArray(merged.durations) && merged.durations.length > 0) {
         merged.duration = merged.duration || merged.durations[0].label || "";
@@ -2703,13 +2702,66 @@ const loadCourses = async () => {
       const newList = courses.filter((c) => String(c.id) !== String(courseId));
       setCourses(newList);
       persistCoursesToCache(newList);
-      console.log("✅ Course deleted from database (or removed from cache).");
+      //console.log("✅ Course deleted from database (or removed from cache).");
     } catch (err) {
-      console.error("Error deleting course from DB:", err);
-      // fallback: remove locally
+      //console.error("Error deleting course from DB:", err);
       const newList = courses.filter((c) => String(c.id) !== String(courseId));
       setCourses(newList);
       persistCoursesToCache(newList);
+    }
+  };
+
+  // Featured Programs CRUD operations
+  const addFeaturedProgram = async (programData) => {
+    try {
+      const { data, error } = await supabase
+        .from('featured_programs')
+        .insert([programData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      await loadFeaturedPrograms();
+      //console.log("✅ Featured program added to database.");
+      return data;
+    } catch (error) {
+      //console.error('Error adding featured program:', error);
+      throw error;
+    }
+  };
+
+  const updateFeaturedProgram = async (programData) => {
+    try {
+      const { error } = await supabase
+        .from('featured_programs')
+        .update(programData)
+        .eq('id', programData.id);
+
+      if (error) throw error;
+      
+      await loadFeaturedPrograms();
+      //console.log("✅ Featured program updated in database.");
+    } catch (error) {
+      //console.error('Error updating featured program:', error);
+      throw error;
+    }
+  };
+
+  const deleteFeaturedProgram = async (programId) => {
+    try {
+      const { error } = await supabase
+        .from('featured_programs')
+        .delete()
+        .eq('id', programId);
+
+      if (error) throw error;
+      
+      await loadFeaturedPrograms();
+      //console.log("✅ Featured program deleted from database.");
+    } catch (error) {
+      //console.error('Error deleting featured program:', error);
+      throw error;
     }
   };
 
@@ -2727,106 +2779,120 @@ const loadCourses = async () => {
   // Admin functions
   const handleAdminLogin = () => {
     setIsAdminAuthenticated(true);
-    setCurrentPage("admin-dashboard");
-    // update URL too
+    navigateTo("admin-dashboard");
     window.history.pushState({}, "", "/admin-dashboard");
   };
 
   const handleAdminLogout = () => {
     setIsAdminAuthenticated(false);
-    setCurrentPage("home");
+    navigateTo("home");
     window.history.pushState({}, "", "/");
   };
+  const validPages = [
+  "home",
+  "courses",
+  "coursedetail",
+  // "about",
+  "faqs",
+  "contact",
+  "admin",
+  "admin-dashboard"
+];
+
+
+// Use createNavigateTo as the main navigation function
+const navigateTo = createNavigateTo;
+
 
   /**
-   * Central navigation helper.
-   * Accepts either a page name like 'home' or a path like '/admin'.
-   * Updates state and browser history.
+   * On mount: handle direct URL visits
    */
-  const navigateTo = useCallback(
-    (routeOrPath) => {
-      if (!routeOrPath) return;
+useEffect(() => {
+  const handleInitialPath = async () => {
+    const path = window.location.pathname || "/";
+    const parts = path.split('/').filter(Boolean); // e.g. ['coursedetail','data-science']
+    
+    if (parts[0] === 'coursedetail') {
+      // try to get slug/id from URL
+      const slugOrId = parts[1] || null;
 
-      // normalize: if starts with '/', remove it
-      let route = routeOrPath.startsWith("/") ? routeOrPath.slice(1) : routeOrPath;
-
-      // map empty route or root to 'home'
-      if (route === "" || route === "/") route = "home";
-
-      // allow visitors to use routes like '/admin' or '/courses'
-      const validPages = ["home", "courses", "about", "faqs", "contact", "admin", "admin-dashboard"];
-
-      if (!validPages.includes(route)) {
-        // fallback to home if unknown
-        route = "home";
+      // ensure courses are loaded (may be cached or loaded by loadCourses)
+      if (!courses || courses.length === 0) {
+        await loadCourses(); // loadCourses updates `courses` state
       }
 
-      // if admin route and already authenticated, go to admin-dashboard
-      if (route === "admin" && isAdminAuthenticated) {
-        setCurrentPage("admin-dashboard");
-        window.history.pushState({}, "", "/admin-dashboard");
+      if (slugOrId) {
+        const found = (courses || []).find(
+          (c) => String(c.slug) === String(slugOrId) || String(c.id) === String(slugOrId)
+        );
+        if (found) {
+          setSelectedCourseDetail(found);
+          navigateTo('coursedetail');
+          return;
+        } else {
+          // fallback to courses list if not found
+          navigateTo('courses');
+          return;
+        }
+      } else {
+        navigateTo('courses');
         return;
       }
+    }
 
-      setCurrentPage(route);
+    // existing behavior for other roots
+    if (path === '/' || path === '') {
+      navigateTo('home');
+    } else {
+      // remove leading slash
+      const route = path.startsWith('/') ? path.slice(1) : path;
+      // keep previous logic but ensure we don't allow unknown pages
+      navigateTo(validPages.includes(route) ? route : 'home');
+    }
+  };
 
-      // Update browser URL for nicer UX
-      if (route === "home") {
-        window.history.pushState({}, "", "/");
-      } else {
-        window.history.pushState({}, "", `/${route}`);
-      }
-    },
-    [isAdminAuthenticated]
-  );
+  handleInitialPath();
 
-  /**
-   * On mount: handle direct URL visits like https://site.com/admin
-   * and listen for back/forward (popstate)
-   */
-  useEffect(() => {
-    const handleInitialPath = () => {
-      const path = window.location.pathname || "/";
-      // call navigateTo with the current path (e.g. '/admin')
-      navigateTo(path === "/" ? "home" : path);
-    };
+  const onPopState = () => {
+    const path = window.location.pathname || "/";
+    navigateTo(path === "/" ? "home" : path);
+  };
 
-    handleInitialPath();
+  window.addEventListener("popstate", onPopState);
+  return () => window.removeEventListener("popstate", onPopState);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [navigateTo, courses]);
 
-    const onPopState = () => {
-      const path = window.location.pathname || "/";
-      navigateTo(path === "/" ? "home" : path);
-    };
 
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [navigateTo]);
-
-  /**
-   * Keep your admin logic: if user is on 'admin' but is authenticated,
-   * redirect to admin-dashboard automatically.
-   * (This ensures typing '/admin' after login works smoothly.)
-   */
   useEffect(() => {
     if (currentPage === "admin" && isAdminAuthenticated) {
-      setCurrentPage("admin-dashboard");
+      navigateTo("admin-dashboard");
       window.history.pushState({}, "", "/admin-dashboard");
     }
-    // note: we DO NOT redirect unauthenticated admin attempts here;
-    // we keep the 'admin' login page available.
   }, [currentPage, isAdminAuthenticated]);
+
+const openCourseDetail = (course, selectedDurationIndex = 0) => {
+  if (!course) return;
+  setSelectedCourseDetail(course);
+  // store which duration was selected on the detail page if you want:
+  // optional: setSelectedCourseDetail(prev => ({ ...course, selectedDurationIndex }));
+  navigateTo('coursedetail');
+  const slugOrId = course.slug || course.id;
+  window.history.pushState({}, '', `/coursedetail/${slugOrId}`);
+};
+
 
   const contextValue = {
     currentPage,
-    setCurrentPage,
+    navigateTo,
     enquiryOpen,
     openEnquiry,
     closeEnquiry,
     selectedCourse,
     setSelectedCourse,
-    // NEW: expose selectedCourseDetail state so Header can set it
     selectedCourseDetail,
     setSelectedCourseDetail,
+    openCourseDetail,
     courses,
     addCourse,
     updateCourse,
@@ -2834,22 +2900,32 @@ const loadCourses = async () => {
     loading,
     error,
     loadCourses,
+    // Featured Programs
+    featuredPrograms,
+    addFeaturedProgram,
+    updateFeaturedProgram,
+    deleteFeaturedProgram,
+    featuredLoading,
   };
+
 
   return (
     <AppContext.Provider value={contextValue}>
       <div className="min-h-screen bg-white">
-        {/* ADD THIS LOADING STATE */}
-        {loading && (
+        {/* Loading state */}
+        {(loading || featuredLoading) && (
           <div className="fixed inset-0 bg-white bg-opacity-90 z-50 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-800 font-medium">Loading courses...</p>
+              <p className="text-gray-800 font-medium">
+                {loading && featuredLoading ? 'Loading content...' : 
+                 loading ? 'Loading courses...' : 'Loading programs...'}
+              </p>
             </div>
           </div>
         )}
 
-        {/* ADD THIS ERROR STATE */}
+        {/* Error state */}
         {error && !loading && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md">
             <p className="font-medium mb-2">⚠️ Database Error</p>
@@ -2870,7 +2946,11 @@ const loadCourses = async () => {
                 key="courses"
               />
             )}
-            {currentPage === "about" && <AboutPage key="about" />}
+            {currentPage === "coursedetail" && (
+  <CourseDetailPage course={selectedCourseDetail} key="coursedetail" />
+)}
+
+            {/* {currentPage === "about" && <AboutPage key="about" />} */}
             {currentPage === "faqs" && <FAQsPage key="faqs" />}
             {currentPage === "contact" && <ContactPage key="contact" />}
             {currentPage === "admin" && !isAdminAuthenticated && (
@@ -2880,11 +2960,6 @@ const loadCourses = async () => {
               <AdminDashboard
                 key="admin-dashboard"
                 onLogout={handleAdminLogout}
-                // pass admin helpers to dashboard if it needs them
-                addCourse={addCourse}
-                updateCourse={updateCourse}
-                deleteCourse={deleteCourse}
-                courses={courses}
               />
             )}
           </AnimatePresence>
@@ -2984,7 +3059,7 @@ const CourseForm = ({ course, onSave, onCancel }) => {
   const [formData, setFormData] = useState(
     course || {
       title: '',
-      category: 'Data Science & AI',
+      category: '',
       level: 'Beginner',
       // NEW: durations array with label + priceText
       durations: [{ label: '3 Months', priceText: 'INR 50,000' }],
@@ -3043,7 +3118,7 @@ const normalizeBeforeSave = (data) => {
       const payload = normalizeBeforeSave(formData);
       await onSave(payload);
     } catch (error) {
-      console.error('Error saving course:', error);
+      //console.error('Error saving course:', error);
     } finally {
       setSaving(false);
     }
@@ -3155,22 +3230,18 @@ const normalizeBeforeSave = (data) => {
             />
           </div>
 
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Category *
             </label>
-            <select
+               <input
+              type="text"
               required
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
@@ -3480,12 +3551,211 @@ const normalizeBeforeSave = (data) => {
   );
 };
 
+// FeaturedProgramForm.jsx
+const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    short_description: '',
+    image_url: '',
+    features: ['', '', ''],
+    brochure_url: '',
+    display_order: 0,
+    is_active: true,
+    ...program
+  });
 
-// Admin Dashboard Component
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleFeatureChange = (index, value) => {
+    const newFeatures = [...formData.features];
+    newFeatures[index] = value;
+    setFormData(prev => ({ ...prev, features: newFeatures }));
+  };
+
+  const addFeature = () => {
+    setFormData(prev => ({
+      ...prev,
+      features: [...prev.features, '']
+    }));
+  };
+
+  const removeFeature = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const filteredFeatures = formData.features.filter(f => f.trim() !== '');
+    onSave({ ...formData, features: filteredFeatures });
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-md p-8">
+      <h2 className="text-2xl font-bold text-blue-900 mb-6">
+        {program ? 'Edit Featured Program' : 'Add Featured Program'}
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Program Title *
+          </label>
+          <input
+            type="text"
+            name="title"
+            required
+            value={formData.title}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="e.g., Data Science & AI Certification"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Short Description
+          </label>
+          <textarea
+            name="short_description"
+            value={formData.short_description}
+            onChange={handleChange}
+            rows={2}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="Brief description of the program"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Image URL *
+          </label>
+          <input
+            type="url"
+            name="image_url"
+            required
+            value={formData.image_url}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="https://images.unsplash.com/..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Features *
+          </label>
+          {formData.features.map((feature, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={feature}
+                onChange={(e) => handleFeatureChange(index, e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                placeholder={`Feature ${index + 1}`}
+              />
+              {formData.features.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeFeature(index)}
+                  className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addFeature}
+            className="mt-2 text-blue-600 hover:text-blue-700 font-medium"
+          >
+            + Add Another Feature
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Brochure PDF URL
+          </label>
+          <input
+            type="text"
+            name="brochure_url"
+            value={formData.brochure_url}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="/DSAI_Generic_Brochure.pdf"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Display Order
+          </label>
+          <input
+            type="number"
+            name="display_order"
+            value={formData.display_order}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="0"
+          />
+          <p className="text-sm text-gray-500 mt-1">Lower numbers appear first</p>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="is_active"
+            id="is_active"
+            checked={formData.is_active}
+            onChange={handleChange}
+            className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_active" className="ml-2 text-sm font-medium text-gray-700">
+            Active (Display on website)
+          </label>
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700"
+          >
+            {program ? 'Update Program' : 'Add Program'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// AdminDashboard.jsx - Add this section
 const AdminDashboard = ({ onLogout }) => {
-  const { courses, addCourse, updateCourse, deleteCourse } = useApp();
+  const { 
+    courses, addCourse, updateCourse, deleteCourse,
+    featuredPrograms, addFeaturedProgram, updateFeaturedProgram, deleteFeaturedProgram 
+  } = useApp();
+  
+  const [activeTab, setActiveTab] = useState('courses'); // 'courses' or 'featured'
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [editingProgram, setEditingProgram] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const handleSaveCourse = async (courseData) => {
@@ -3498,7 +3768,30 @@ const AdminDashboard = ({ onLogout }) => {
       setShowForm(false);
       setEditingCourse(null);
     } catch (error) {
-      console.error('Error saving course:', error);
+      //console.error('Error saving course:', error);
+    }
+  };
+
+  const handleSaveProgram = async (programData) => {
+    try {
+      if (editingProgram) {
+        await updateFeaturedProgram({ ...programData, id: editingProgram.id });
+      } else {
+        await addFeaturedProgram(programData);
+      }
+      setShowForm(false);
+      setEditingProgram(null);
+    } catch (error) {
+      //console.error('Error saving program:', error);
+    }
+  };
+
+  const handleDeleteProgram = async (programId) => {
+    try {
+      await deleteFeaturedProgram(programId);
+      setDeleteConfirm(null);
+    } catch (error) {
+      //console.error('Error deleting program:', error);
     }
   };
 
@@ -3512,7 +3805,7 @@ const AdminDashboard = ({ onLogout }) => {
       await deleteCourse(courseId);
       setDeleteConfirm(null);
     } catch (error) {
-      console.error('Error deleting course:', error);
+      //console.error('Error deleting course:', error);
     }
   };
 
@@ -3529,7 +3822,7 @@ const AdminDashboard = ({ onLogout }) => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-blue-900 mb-2">Admin Dashboard</h1>
-              <p className="text-gray-800">Manage courses and content</p>
+              <p className="text-gray-800">Manage courses and featured programs</p>
             </div>
             <button
               onClick={onLogout}
@@ -3540,33 +3833,72 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="text-3xl font-bold text-blue-600 mb-2">{courses.length}</div>
-            <div className="text-gray-800">Total Courses</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {courses.filter(c => c.status === 'Enrolling Now').length}
-            </div>
-            <div className="text-gray-800">Active Courses</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="text-3xl font-bold text-yellow-600 mb-2">
-              {courses.filter(c => c.status === 'Launching Soon').length}
-            </div>
-            <div className="text-gray-800">Coming Soon</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
-              {courses.filter(c => c.status === 'Planned').length}
-            </div>
-            <div className="text-gray-800">Planned</div>
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-md mb-8">
+          <div className="flex border-b">
+            <button
+              onClick={() => {
+                setActiveTab('courses');
+                setShowForm(false);
+                setEditingCourse(null);
+                setEditingProgram(null);
+              }}
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
+                activeTab === 'courses'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              Courses ({courses.length})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('featured');
+                setShowForm(false);
+                setEditingCourse(null);
+                setEditingProgram(null);
+              }}
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
+                activeTab === 'featured'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              Featured Programs ({featuredPrograms.length})
+            </button>
           </div>
         </div>
 
-        {/* Add Course Button */}
+        {/* Courses Tab Content */}
+        {activeTab === 'courses' && (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="text-3xl font-bold text-blue-600 mb-2">{courses.length}</div>
+                <div className="text-gray-800">Total Courses</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {courses.filter(c => c.status === 'Enrolling Now').length}
+                </div>
+                <div className="text-gray-800">Active Courses</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="text-3xl font-bold text-yellow-600 mb-2">
+                  {courses.filter(c => c.status === 'Launching Soon').length}
+                </div>
+                <div className="text-gray-800">Coming Soon</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {courses.filter(c => c.status === 'Planned').length}
+                </div>
+                <div className="text-gray-800">Planned</div>
+              </div>
+            </div>
+
+             {/* Add Course Button */}
         {!showForm && (
           <div className="mb-8">
             <button
@@ -3578,21 +3910,21 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         )}
 
-        {/* Course Form */}
-        {showForm && (
-          <div className="mb-8">
-            <CourseForm
-              course={editingCourse}
-              onSave={handleSaveCourse}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingCourse(null);
-              }}
-            />
-          </div>
-        )}
+            {/* Course Form */}
+            {showForm && (
+              <div className="mb-8">
+                <CourseForm
+                  course={editingCourse}
+                  onSave={handleSaveCourse}
+                  onCancel={() => {
+                    setShowForm(false);
+                    setEditingCourse(null);
+                  }}
+                />
+              </div>
+            )}
 
-        {/* Courses List */}
+                   {/* Courses List */}
         {!showForm && (
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -3668,7 +4000,7 @@ const AdminDashboard = ({ onLogout }) => {
                           Edit
                         </button>
                         <button
-                          onClick={() => setDeleteConfirm(course)}
+                          onClick={() => setDeleteConfirm({ type: 'course', item: course })}
                           className="text-red-600 hover:text-red-900"
                         >
                           Delete
@@ -3682,7 +4014,105 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         )}
 
+          </>
+        )}
+
+        {/* Featured Programs Tab Content */}
+        {activeTab === 'featured' && (
+          <>
+            {/* Add Program Button */}
+            {!showForm && (
+              <div className="mb-8">
+                <button
+                  onClick={() => {
+                    setEditingProgram(null);
+                    setShowForm(true);
+                  }}
+                  className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <span className="text-xl">+</span> Add Featured Program
+                </button>
+              </div>
+            )}
+
+            {/* Program Form */}
+            {showForm && (
+              <div className="mb-8">
+                <FeaturedProgramForm
+                  program={editingProgram}
+                  onSave={handleSaveProgram}
+                  onCancel={() => {
+                    setShowForm(false);
+                    setEditingProgram(null);
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Programs Grid */}
+            {!showForm && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredPrograms.map((program) => (
+                  <div key={program.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+                    <img
+                      src={program.image_url}
+                      alt={program.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg font-bold text-gray-900">{program.title}</h3>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                          program.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {program.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      
+                      {program.short_description && (
+                        <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>
+                      )}
+                      
+                      <div className="space-y-2 mb-4">
+                        {program.features.slice(0, 3).map((feature, idx) => (
+                          <div key={idx} className="flex items-start text-sm text-gray-700">
+                            <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+                            {feature}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="text-xs text-gray-500 mb-4">
+                        Display Order: {program.display_order}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingProgram(program);
+                            setShowForm(true);
+                          }}
+                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 text-sm font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm({ type: 'program', item: program })}
+                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 text-sm font-medium"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {/* Delete Confirmation Modal */}
+        
         <AnimatePresence>
           {deleteConfirm && (
             <motion.div
@@ -3703,9 +4133,11 @@ const AdminDashboard = ({ onLogout }) => {
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <X className="w-8 h-8 text-red-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Course?</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    Delete {deleteConfirm.type === 'program' ? 'Program' : 'Course'}?
+                  </h3>
                   <p className="text-gray-800 mb-6">
-                    Are you sure you want to delete "<strong>{deleteConfirm.title}</strong>"? This action cannot be undone.
+                    Are you sure you want to delete "<strong>{deleteConfirm.item.title}</strong>"? This action cannot be undone.
                   </p>
                   <div className="flex gap-4">
                     <button
@@ -3715,11 +4147,19 @@ const AdminDashboard = ({ onLogout }) => {
                       Cancel
                     </button>
                     <button
-                      onClick={() => handleDelete(deleteConfirm.id)}
+                      onClick={() => {
+                        if (deleteConfirm.type === 'program') {
+                          handleDeleteProgram(deleteConfirm.item.id);
+                        } else {
+                          handleDelete(deleteConfirm.item.id);
+                        }
+                      }}
                       className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors"
                     >
                       Delete
                     </button>
+
+                    
                   </div>
                 </div>
               </motion.div>
