@@ -29,143 +29,144 @@ export { useApp };
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
 
-Mock course data from brochure
-const mockCourses = [
-  {
-    id: 1,
-    slug: 'data-science-genai-crash',
-    title: 'Data Science & GenAI Crash Course',
-    category: 'Data Science & AI',
-    level: 'Beginner',
-    duration: '2 Months',
-    priceText: 'INR 30,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
-    fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
-    curriculum: [
-      { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
-      { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
-      { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
-      { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
-    ],
-    projects: ['2-3 mini projects', 'Real dataset analysis'],
-    tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
-    outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 2,
-    slug: 'data-science-genai-certificate',
-    title: 'Data Science & GenAI Certificate Program',
-    category: 'Data Science & AI',
-    level: 'Intermediate',
-    duration: '4 Months',
-    priceText: 'INR 65,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
-    fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
-    curriculum: [
-      { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
-      { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
-      { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
-      { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
-      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
-      { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
-    ],
-    projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
-    tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
-    outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
-    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 3,
-    slug: 'data-science-genai-diploma',
-    title: 'Data Science & GenAI Diploma Program',
-    category: 'Data Science & AI',
-    level: 'Advanced',
-    duration: '7 Months',
-    priceText: 'INR 90,000',
-    status: 'Enrolling Now',
-    shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
-    fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
-    curriculum: [
-      { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
-      { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
-      { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
-      { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
-      { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
-      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
-      { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
-    ],
-    projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
-    tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
-    outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 4,
-    slug: 'generative-ai-prompt-engineering',
-    title: 'Generative AI & Prompt Engineering',
-    category: 'Generative AI & LLM Programs',
-    level: 'Intermediate',
-    duration: '3 Months',
-    priceText: 'Coming Soon',
-    status: 'Launching Soon',
-    shortDescription: 'Master prompt engineering and GenAI applications',
-    fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
-    curriculum: [
-      { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
-      { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
-      { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
-    ],
-    projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
-    tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
-    outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 5,
-    slug: 'ai-healthcare',
-    title: 'AI in Healthcare & Life Sciences',
-    category: 'Industry-Specific AI Programs',
-    level: 'Advanced',
-    duration: '5 Months',
-    priceText: 'Coming Soon',
-    status: 'Under Development',
-    shortDescription: 'Apply AI to healthcare challenges and medical data',
-    fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
-    curriculum: [
-      { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
-      { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
-      { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
-    ],
-    projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
-    tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
-    outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
-  },
-  {
-    id: 6,
-    slug: 'computer-vision',
-    title: 'Computer Vision & Autonomous Systems',
-    category: 'DeepTech & Emerging Technologies',
-    level: 'Advanced',
-    duration: '6 Months',
-    priceText: 'Coming Soon',
-    status: 'Planned',
-    shortDescription: 'Build intelligent vision systems and autonomous applications',
-    fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
-    curriculum: [
-      { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
-      { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
-      { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
-    ],
-    projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
-    tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
-    outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
-  }
-];
+//mock data
+//Mock course data from brochure
+// const mockCourses = [
+//   {
+//     id: 1,
+//     slug: 'data-science-genai-crash',
+//     title: 'Data Science & GenAI Crash Course',
+//     category: 'Data Science & AI',
+//     level: 'Beginner',
+//     duration: '2 Months',
+//     priceText: 'INR 30,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
+//     fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
+//     curriculum: [
+//       { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
+//       { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
+//       { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
+//       { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
+//     ],
+//     projects: ['2-3 mini projects', 'Real dataset analysis'],
+//     tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
+//     outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
+//     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 2,
+//     slug: 'data-science-genai-certificate',
+//     title: 'Data Science & GenAI Certificate Program',
+//     category: 'Data Science & AI',
+//     level: 'Intermediate',
+//     duration: '4 Months',
+//     priceText: 'INR 65,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
+//     fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
+//     curriculum: [
+//       { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
+//       { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
+//       { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
+//       { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
+//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
+//       { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
+//     ],
+//     projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
+//     tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
+//     outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
+//     image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 3,
+//     slug: 'data-science-genai-diploma',
+//     title: 'Data Science & GenAI Diploma Program',
+//     category: 'Data Science & AI',
+//     level: 'Advanced',
+//     duration: '7 Months',
+//     priceText: 'INR 90,000',
+//     status: 'Enrolling Now',
+//     shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
+//     fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
+//     curriculum: [
+//       { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
+//       { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
+//       { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
+//       { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
+//       { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
+//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
+//       { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
+//     ],
+//     projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
+//     tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
+//     outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
+//     image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 4,
+//     slug: 'generative-ai-prompt-engineering',
+//     title: 'Generative AI & Prompt Engineering',
+//     category: 'Generative AI & LLM Programs',
+//     level: 'Intermediate',
+//     duration: '3 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Launching Soon',
+//     shortDescription: 'Master prompt engineering and GenAI applications',
+//     fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
+//     curriculum: [
+//       { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
+//       { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
+//       { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
+//     ],
+//     projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
+//     tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
+//     outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
+//     image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 5,
+//     slug: 'ai-healthcare',
+//     title: 'AI in Healthcare & Life Sciences',
+//     category: 'Industry-Specific AI Programs',
+//     level: 'Advanced',
+//     duration: '5 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Under Development',
+//     shortDescription: 'Apply AI to healthcare challenges and medical data',
+//     fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
+//     curriculum: [
+//       { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
+//       { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
+//       { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
+//     ],
+//     projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
+//     tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
+//     outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
+//     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
+//   },
+//   {
+//     id: 6,
+//     slug: 'computer-vision',
+//     title: 'Computer Vision & Autonomous Systems',
+//     category: 'DeepTech & Emerging Technologies',
+//     level: 'Advanced',
+//     duration: '6 Months',
+//     priceText: 'Coming Soon',
+//     status: 'Planned',
+//     shortDescription: 'Build intelligent vision systems and autonomous applications',
+//     fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
+//     curriculum: [
+//       { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
+//       { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
+//       { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
+//     ],
+//     projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
+//     tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
+//     outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
+//     image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
+//   }
+// ];
 
 // Stats from brochure
 const stats = [

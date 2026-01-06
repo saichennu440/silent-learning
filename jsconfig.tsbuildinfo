@@ -1,1 +1,1 @@
-{"root":["./src/app.jsx","./src/main.jsx","./src/config/supabase.js","./src/services/coursesservice.js"],"version":"5.9.3"}
+{"root":["./src/app.jsx","./src/coursedetailpage.jsx","./src/main.jsx","./src/config/supabase.js","./src/services/coursesservice.js"],"version":"5.9.3"}
