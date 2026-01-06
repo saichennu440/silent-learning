@@ -1,11 +1,11 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star} from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star, Move} from 'lucide-react';
 import CourseDetailPage from './CourseDetailPage.jsx';
 import './App.css';
-// Context for global state
 
-//Database imports - MAKE SURE TO CREATE THESE FILES
+
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { 
   fetchCourses, 
   createCourse, 
@@ -29,143 +29,143 @@ export { useApp };
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
 
-// Mock course data from brochure
-// const mockCourses = [
-//   {
-//     id: 1,
-//     slug: 'data-science-genai-crash',
-//     title: 'Data Science & GenAI Crash Course',
-//     category: 'Data Science & AI',
-//     level: 'Beginner',
-//     duration: '2 Months',
-//     priceText: 'INR 30,000',
-//     status: 'Enrolling Now',
-//     shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
-//     fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
-//     curriculum: [
-//       { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
-//       { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
-//       { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
-//       { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
-//     ],
-//     projects: ['2-3 mini projects', 'Real dataset analysis'],
-//     tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
-//     outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
-//     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
-//   },
-//   {
-//     id: 2,
-//     slug: 'data-science-genai-certificate',
-//     title: 'Data Science & GenAI Certificate Program',
-//     category: 'Data Science & AI',
-//     level: 'Intermediate',
-//     duration: '4 Months',
-//     priceText: 'INR 65,000',
-//     status: 'Enrolling Now',
-//     shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
-//     fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
-//     curriculum: [
-//       { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
-//       { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
-//       { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
-//       { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
-//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
-//       { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
-//     ],
-//     projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
-//     tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
-//     outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
-//     image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
-//   },
-//   {
-//     id: 3,
-//     slug: 'data-science-genai-diploma',
-//     title: 'Data Science & GenAI Diploma Program',
-//     category: 'Data Science & AI',
-//     level: 'Advanced',
-//     duration: '7 Months',
-//     priceText: 'INR 90,000',
-//     status: 'Enrolling Now',
-//     shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
-//     fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
-//     curriculum: [
-//       { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
-//       { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
-//       { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
-//       { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
-//       { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
-//       { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
-//       { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
-//     ],
-//     projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
-//     tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
-//     outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
-//     image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
-//   },
-//   {
-//     id: 4,
-//     slug: 'generative-ai-prompt-engineering',
-//     title: 'Generative AI & Prompt Engineering',
-//     category: 'Generative AI & LLM Programs',
-//     level: 'Intermediate',
-//     duration: '3 Months',
-//     priceText: 'Coming Soon',
-//     status: 'Launching Soon',
-//     shortDescription: 'Master prompt engineering and GenAI applications',
-//     fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
-//     curriculum: [
-//       { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
-//       { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
-//       { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
-//     ],
-//     projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
-//     tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
-//     outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
-//     image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
-//   },
-//   {
-//     id: 5,
-//     slug: 'ai-healthcare',
-//     title: 'AI in Healthcare & Life Sciences',
-//     category: 'Industry-Specific AI Programs',
-//     level: 'Advanced',
-//     duration: '5 Months',
-//     priceText: 'Coming Soon',
-//     status: 'Under Development',
-//     shortDescription: 'Apply AI to healthcare challenges and medical data',
-//     fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
-//     curriculum: [
-//       { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
-//       { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
-//       { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
-//     ],
-//     projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
-//     tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
-//     outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
-//     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
-//   },
-//   {
-//     id: 6,
-//     slug: 'computer-vision',
-//     title: 'Computer Vision & Autonomous Systems',
-//     category: 'DeepTech & Emerging Technologies',
-//     level: 'Advanced',
-//     duration: '6 Months',
-//     priceText: 'Coming Soon',
-//     status: 'Planned',
-//     shortDescription: 'Build intelligent vision systems and autonomous applications',
-//     fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
-//     curriculum: [
-//       { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
-//       { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
-//       { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
-//     ],
-//     projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
-//     tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
-//     outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
-//     image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
-//   }
-// ];
+Mock course data from brochure
+const mockCourses = [
+  {
+    id: 1,
+    slug: 'data-science-genai-crash',
+    title: 'Data Science & GenAI Crash Course',
+    category: 'Data Science & AI',
+    level: 'Beginner',
+    duration: '2 Months',
+    priceText: 'INR 30,000',
+    status: 'Enrolling Now',
+    shortDescription: 'Fast-paced, beginner-friendly introduction to Data Science and AI',
+    fullDescription: 'A comprehensive crash course covering Excel, SQL, Python, Power BI/Tableau, basic statistics, and foundational machine learning. Perfect for those looking to start their journey in data analytics.',
+    curriculum: [
+      { title: 'Excel & SQL Fundamentals', topics: ['Data cleaning', 'Analysis', 'Dashboards', 'Querying'] },
+      { title: 'Python for Data Science', topics: ['Variables, loops, functions', 'NumPy & Pandas', 'Matplotlib'] },
+      { title: 'Statistics & EDA', topics: ['Descriptive statistics', 'Hypothesis testing', 'Exploratory analysis'] },
+      { title: 'ML Basics', topics: ['Regression', 'Classification', 'Model evaluation'] }
+    ],
+    projects: ['2-3 mini projects', 'Real dataset analysis'],
+    tools: ['Excel', 'SQL', 'Python', 'Power BI', 'Tableau'],
+    outcomes: ['Job-ready for Analyst Assistant roles', 'Course Completion Certificate'],
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop'
+  },
+  {
+    id: 2,
+    slug: 'data-science-genai-certificate',
+    title: 'Data Science & GenAI Certificate Program',
+    category: 'Data Science & AI',
+    level: 'Intermediate',
+    duration: '4 Months',
+    priceText: 'INR 65,000',
+    status: 'Enrolling Now',
+    shortDescription: 'Structured program with moderate depth in Data Science and Generative AI',
+    fullDescription: 'Master the complete data science pipeline from analytics to GenAI. Build real projects including an AI chatbot and comprehensive portfolio.',
+    curriculum: [
+      { title: 'Data & Analytics Fundamentals', topics: ['Excel', 'SQL', 'Power BI/Tableau', 'Data storytelling'] },
+      { title: 'Python & Statistics', topics: ['Python for DS', 'NumPy/Pandas', 'Statistical analysis', 'EDA'] },
+      { title: 'Machine Learning', topics: ['Regression & Classification', 'Feature engineering', 'Model evaluation'] },
+      { title: 'Deep Learning & NLP', topics: ['Neural networks', 'Text preprocessing', 'Sentiment analysis'] },
+      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'RAG workflows'] },
+      { title: 'Capstone Project', topics: ['AI Chatbot', 'Portfolio creation'] }
+    ],
+    projects: ['4-6 practical projects', 'AI Chatbot', 'Capstone project'],
+    tools: ['Python', 'SQL', 'Power BI', 'TensorFlow', 'PyTorch', 'LangChain'],
+    outcomes: ['Job-ready for Data Analyst & ML Trainee roles', 'Professional Certification'],
+    image: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&auto=format&fit=crop'
+  },
+  {
+    id: 3,
+    slug: 'data-science-genai-diploma',
+    title: 'Data Science & GenAI Diploma Program',
+    category: 'Data Science & AI',
+    level: 'Advanced',
+    duration: '7 Months',
+    priceText: 'INR 90,000',
+    status: 'Enrolling Now',
+    shortDescription: 'Advanced, in-depth, industry-ready comprehensive program',
+    fullDescription: 'Our flagship program offering dual certification and internship letter. Comprehensive coverage from fundamentals to advanced GenAI applications with 10+ projects.',
+    curriculum: [
+      { title: 'Core Foundations', topics: ['Excel, SQL, Python', 'Statistics & EDA', 'Power BI/Tableau'] },
+      { title: 'Machine Learning', topics: ['Supervised learning', 'Unsupervised learning', 'Feature engineering'] },
+      { title: 'Advanced ML', topics: ['Decision Trees', 'Random Forest', 'XGBoost', 'Time Series'] },
+      { title: 'Deep Learning', topics: ['Neural networks', 'CNN/RNN', 'Transfer learning'] },
+      { title: 'NLP & Text Analytics', topics: ['Text preprocessing', 'Sentiment analysis', 'Classification'] },
+      { title: 'GenAI & LLMs', topics: ['Transformers', 'Prompt engineering', 'Fine-tuning', 'RAG workflows'] },
+      { title: 'Deployment', topics: ['ML/DL projects', 'AI Chatbot', 'Portfolio'] }
+    ],
+    projects: ['10+ projects', 'AI Chatbot', 'Capstone project', 'Industry simulation'],
+    tools: ['Python', 'SQL', 'TensorFlow', 'PyTorch', 'LangChain', 'Hugging Face', 'OpenAI API'],
+    outcomes: ['Job-ready for Data Scientist, ML Engineer, AI Engineer roles', 'Dual Certification + Internship Letter'],
+    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop'
+  },
+  {
+    id: 4,
+    slug: 'generative-ai-prompt-engineering',
+    title: 'Generative AI & Prompt Engineering',
+    category: 'Generative AI & LLM Programs',
+    level: 'Intermediate',
+    duration: '3 Months',
+    priceText: 'Coming Soon',
+    status: 'Launching Soon',
+    shortDescription: 'Master prompt engineering and GenAI applications',
+    fullDescription: 'Deep dive into prompt engineering, LLM applications, and building GenAI solutions for real-world use cases.',
+    curriculum: [
+      { title: 'GenAI Fundamentals', topics: ['LLM basics', 'Transformer architecture', 'API usage'] },
+      { title: 'Prompt Engineering', topics: ['Advanced techniques', 'Chain-of-thought', 'Few-shot learning'] },
+      { title: 'RAG Applications', topics: ['Vector databases', 'Document retrieval', 'Context management'] }
+    ],
+    projects: ['Chatbot applications', 'RAG systems', 'Custom GenAI tools'],
+    tools: ['OpenAI API', 'LangChain', 'ChromaDB', 'Pinecone'],
+    outcomes: ['GenAI Developer ready', 'Certificate of Completion'],
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop'
+  },
+  {
+    id: 5,
+    slug: 'ai-healthcare',
+    title: 'AI in Healthcare & Life Sciences',
+    category: 'Industry-Specific AI Programs',
+    level: 'Advanced',
+    duration: '5 Months',
+    priceText: 'Coming Soon',
+    status: 'Under Development',
+    shortDescription: 'Apply AI to healthcare challenges and medical data',
+    fullDescription: 'Specialized program focusing on AI applications in healthcare including medical imaging, patient data analysis, and clinical decision support systems.',
+    curriculum: [
+      { title: 'Healthcare AI Fundamentals', topics: ['Medical data types', 'Privacy & compliance', 'Domain knowledge'] },
+      { title: 'Medical Imaging', topics: ['Computer vision', 'Image classification', 'Segmentation'] },
+      { title: 'Clinical Applications', topics: ['Predictive models', 'Risk assessment', 'Treatment optimization'] }
+    ],
+    projects: ['Medical image analysis', 'Patient outcome prediction', 'Clinical decision support'],
+    tools: ['Python', 'TensorFlow', 'Medical imaging libraries', 'FHIR APIs'],
+    outcomes: ['Healthcare AI Specialist', 'Industry Certificate'],
+    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&auto=format&fit=crop'
+  },
+  {
+    id: 6,
+    slug: 'computer-vision',
+    title: 'Computer Vision & Autonomous Systems',
+    category: 'DeepTech & Emerging Technologies',
+    level: 'Advanced',
+    duration: '6 Months',
+    priceText: 'Coming Soon',
+    status: 'Planned',
+    shortDescription: 'Build intelligent vision systems and autonomous applications',
+    fullDescription: 'Advanced program covering computer vision, object detection, tracking, and autonomous system development.',
+    curriculum: [
+      { title: 'Computer Vision Basics', topics: ['Image processing', 'Feature extraction', 'Classical CV'] },
+      { title: 'Deep Learning for Vision', topics: ['CNNs', 'Object detection', 'Segmentation', 'Tracking'] },
+      { title: 'Autonomous Systems', topics: ['Sensor fusion', 'Path planning', 'Real-time processing'] }
+    ],
+    projects: ['Object detection system', 'Visual tracking', 'Autonomous navigation'],
+    tools: ['OpenCV', 'PyTorch', 'YOLO', 'ROS'],
+    outcomes: ['Computer Vision Engineer ready', 'Advanced Certification'],
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&auto=format&fit=crop'
+  }
+];
 
 // Stats from brochure
 const stats = [
@@ -1339,12 +1339,23 @@ const CoursesPage = ({ selectedCourseDetail, setSelectedCourseDetail }) => {
   const categories = ['All', 'Data Science & AI', 'Generative AI & LLM Programs', 'Industry-Specific AI Programs', 'DeepTech & Emerging Technologies'];
   const statuses = ['All', 'Enrolling Now', 'Launching Soon', 'Under Development', 'Planned'];
 
-  const filteredCourses = courses.filter(course => {
-    if (filters.level !== 'All' && course.level !== filters.level) return false;
-    if (filters.category !== 'All' && course.category !== filters.category) return false;
-    if (filters.status !== 'All' && course.status !== filters.status) return false;
-    return true;
-  });
+
+// ensure we work with a copy that is sorted by displayOrder first
+const sortedCourses = [...(courses || [])].sort((a,b) => {
+  const aOrd = typeof a.displayOrder === 'number' ? a.displayOrder : Number.POSITIVE_INFINITY;
+  const bOrd = typeof b.displayOrder === 'number' ? b.displayOrder : Number.POSITIVE_INFINITY;
+  if (aOrd !== bOrd) return aOrd - bOrd;
+  return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+});
+
+
+const filteredCourses = sortedCourses.filter(course => {
+  if (filters.level !== 'All' && course.level !== filters.level) return false;
+  if (filters.category !== 'All' && course.category !== filters.category) return false;
+  if (filters.status !== 'All' && course.status !== filters.status) return false;
+  return true;
+});
+
 
   const handleLearnMore = (course) => {
     openCourseDetail(course);
@@ -3745,19 +3756,99 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
   );
 };
 
-// AdminDashboard.jsx - Add this section
+// AdminDashboard.jsx
+
 const AdminDashboard = ({ onLogout }) => {
-  const { 
-    courses, addCourse, updateCourse, deleteCourse,
-    featuredPrograms, addFeaturedProgram, updateFeaturedProgram, deleteFeaturedProgram 
+  const {
+    courses,
+    addCourse,
+    updateCourse,
+    deleteCourse,
+    loadCourses,
+    featuredPrograms,
+    addFeaturedProgram,
+    updateFeaturedProgram,
+    deleteFeaturedProgram,
   } = useApp();
-  
-  const [activeTab, setActiveTab] = useState('courses'); // 'courses' or 'featured'
+
+  const [activeTab, setActiveTab] = useState("courses"); // 'courses' or 'featured'
   const [showForm, setShowForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [editingProgram, setEditingProgram] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // local ordered list for drag & drop
+  const [orderedCourses, setOrderedCourses] = useState([]);
+
+// Keep orderedCourses in sync with courses from context (use displayOrder)
+ useEffect(() => {
+  if (!Array.isArray(courses)) {
+    setOrderedCourses([]);
+    return;
+  }
+  const normalized = courses.map((c, idx) => ({
+    ...c,
+    // accept either camelCase or snake_case just in case
+    displayOrder: (typeof c.displayOrder === 'number')
+      ? c.displayOrder
+      : (typeof c.display_order === 'number' ? c.display_order : idx),
+  }));
+  normalized.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+  setOrderedCourses(normalized);
+}, [courses]);
+
+// reorder helper: returns items with updated displayOrder
+const reorderArray = (list, startIndex, endIndex) => {
+  const result = Array.from(list);
+  const [removed] = result.splice(startIndex, 1);
+  result.splice(endIndex, 0, removed);
+  return result.map((item, index) => ({ ...item, displayOrder: index }));
+};
+
+const onDragEnd = async (result) => {
+  if (!result.destination) return;
+  if (result.destination.index === result.source.index) return;
+
+  const newOrder = reorderArray(orderedCourses, result.source.index, result.destination.index);
+  setOrderedCourses(newOrder); // optimistic
+
+  try {
+    // Persist: use the context updateCourse(updatedCourse) which ultimately calls service
+    const updatePromises = newOrder.map((c) =>
+      updateCourse({ ...c, displayOrder: c.displayOrder }).then(
+        (res) => ({ ok: true, id: c.id, res }),
+        (err) => ({ ok: false, id: c.id, err })
+      )
+    );
+
+    const results = await Promise.all(updatePromises);
+    const anyFailed = results.some((r) => !r.ok);
+
+    if (anyFailed) {
+      console.warn('Some updates failed while saving order', results.filter(r => !r.ok));
+      if (typeof loadCourses === 'function') await loadCourses();
+      else {
+        // fallback: reset from courses prop
+        const normalized = (courses || []).map((c, idx) => ({
+          ...c,
+          displayOrder: typeof c.displayOrder === 'number' ? c.displayOrder : (typeof c.display_order === 'number' ? c.display_order : idx)
+        })).sort((a,b) => a.displayOrder - b.displayOrder);
+        setOrderedCourses(normalized);
+      }
+    } else {
+      // success — optionally reload or persist cache; keep optimistic order
+      if (typeof loadCourses === 'function') {
+        // coarse option: reload to ensure canonical server state (optional)
+        await loadCourses();
+      }
+    }
+  } catch (err) {
+    console.error('Unexpected error while saving order:', err);
+    if (typeof loadCourses === 'function') await loadCourses();
+  }
+};
+
+  // ---------- Course CRUD handlers ----------
   const handleSaveCourse = async (courseData) => {
     try {
       if (editingCourse) {
@@ -3768,7 +3859,7 @@ const AdminDashboard = ({ onLogout }) => {
       setShowForm(false);
       setEditingCourse(null);
     } catch (error) {
-      //console.error('Error saving course:', error);
+      console.error("Error saving course:", error);
     }
   };
 
@@ -3782,7 +3873,7 @@ const AdminDashboard = ({ onLogout }) => {
       setShowForm(false);
       setEditingProgram(null);
     } catch (error) {
-      //console.error('Error saving program:', error);
+      console.error("Error saving program:", error);
     }
   };
 
@@ -3791,7 +3882,7 @@ const AdminDashboard = ({ onLogout }) => {
       await deleteFeaturedProgram(programId);
       setDeleteConfirm(null);
     } catch (error) {
-      //console.error('Error deleting program:', error);
+      console.error("Error deleting program:", error);
     }
   };
 
@@ -3805,7 +3896,7 @@ const AdminDashboard = ({ onLogout }) => {
       await deleteCourse(courseId);
       setDeleteConfirm(null);
     } catch (error) {
-      //console.error('Error deleting course:', error);
+      console.error("Error deleting course:", error);
     }
   };
 
@@ -3824,10 +3915,7 @@ const AdminDashboard = ({ onLogout }) => {
               <h1 className="text-3xl font-bold text-blue-900 mb-2">Admin Dashboard</h1>
               <p className="text-gray-800">Manage courses and featured programs</p>
             </div>
-            <button
-              onClick={onLogout}
-              className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
-            >
+            <button type="button" onClick={onLogout} className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors">
               Logout
             </button>
           </div>
@@ -3837,78 +3925,64 @@ const AdminDashboard = ({ onLogout }) => {
         <div className="bg-white rounded-xl shadow-md mb-8">
           <div className="flex border-b">
             <button
+              type="button"
               onClick={() => {
-                setActiveTab('courses');
+                setActiveTab("courses");
                 setShowForm(false);
                 setEditingCourse(null);
                 setEditingProgram(null);
               }}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-                activeTab === 'courses'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === "courses" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600 hover:text-blue-600"}`}
             >
-              Courses ({courses.length})
+              Courses ({courses?.length || 0})
             </button>
+
             <button
+              type="button"
               onClick={() => {
-                setActiveTab('featured');
+                setActiveTab("featured");
                 setShowForm(false);
                 setEditingCourse(null);
                 setEditingProgram(null);
               }}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-                activeTab === 'featured'
-                  ? 'border-b-2 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === "featured" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-600 hover:text-blue-600"}`}
             >
-              Featured Programs ({featuredPrograms.length})
+              Featured Programs ({featuredPrograms?.length || 0})
             </button>
           </div>
         </div>
 
         {/* Courses Tab Content */}
-        {activeTab === 'courses' && (
+        {activeTab === "courses" && (
           <>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="text-3xl font-bold text-blue-600 mb-2">{courses.length}</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">{courses?.length || 0}</div>
                 <div className="text-gray-800">Total Courses</div>
               </div>
               <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="text-3xl font-bold text-green-600 mb-2">
-                  {courses.filter(c => c.status === 'Enrolling Now').length}
-                </div>
+                <div className="text-3xl font-bold text-green-600 mb-2">{courses?.filter((c) => c.status === "Enrolling Now").length || 0}</div>
                 <div className="text-gray-800">Active Courses</div>
               </div>
               <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="text-3xl font-bold text-yellow-600 mb-2">
-                  {courses.filter(c => c.status === 'Launching Soon').length}
-                </div>
+                <div className="text-3xl font-bold text-yellow-600 mb-2">{courses?.filter((c) => c.status === "Launching Soon").length || 0}</div>
                 <div className="text-gray-800">Coming Soon</div>
               </div>
               <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {courses.filter(c => c.status === 'Planned').length}
-                </div>
+                <div className="text-3xl font-bold text-purple-600 mb-2">{courses?.filter((c) => c.status === "Planned").length || 0}</div>
                 <div className="text-gray-800">Planned</div>
               </div>
             </div>
 
-             {/* Add Course Button */}
-        {!showForm && (
-          <div className="mb-8">
-            <button
-              onClick={handleAddNew}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <span className="text-xl">+</span> Add New Course
-            </button>
-          </div>
-        )}
+            {/* Add Course Button */}
+            {!showForm && (
+              <div className="mb-8">
+                <button type="button" onClick={handleAddNew} className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
+                  <span className="text-xl">+</span> Add New Course
+                </button>
+              </div>
+            )}
 
             {/* Course Form */}
             {showForm && (
@@ -3924,112 +3998,106 @@ const AdminDashboard = ({ onLogout }) => {
               </div>
             )}
 
-                   {/* Courses List */}
-        {!showForm && (
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-blue-900">All Courses</h2>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Course
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Level
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {courses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={course.image}
-                            alt={course.title}
-                            className="w-12 h-12 rounded-lg object-cover mr-3"
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{course.title}</div>
-                            <div className="text-sm text-gray-500">{course.duration}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{course.category}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {course.level}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          course.status === 'Enrolling Now' ? 'bg-green-100 text-green-800' :
-                          course.status === 'Launching Soon' ? 'bg-blue-100 text-blue-800' :
-                          course.status === 'Under Development' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {course.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {course.priceText}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(course)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm({ type: 'course', item: course })}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+            {/* Courses List (draggable) */}
+            {!showForm && (
+              <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-blue-900">All Courses</h2>
+                  <p className="text-sm text-gray-500 mt-1">Drag rows to reorder the list. Changes are saved automatically.</p>
+                </div>
 
+                <div className="overflow-x-auto">
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+
+                      {/* IMPORTANT: Droppable must wrap the tbody which actually contains draggable <tr> children */}
+                      <Droppable droppableId="courses-droppable">
+                        {(provided) => (
+                          <tbody ref={provided.innerRef} {...provided.droppableProps} className="bg-white divide-y divide-gray-200">
+                            {orderedCourses.map((course, index) => (
+                              <Draggable key={String(course.id)} draggableId={String(course.id)} index={index}>
+                                {(draggableProvided, snapshot) => (
+                                  <tr
+                                    ref={draggableProvided.innerRef}
+                                    {...draggableProvided.draggableProps}
+                                    className={`hover:bg-gray-50 ${snapshot.isDragging ? "bg-gray-50" : ""}`}
+                                  >
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="flex items-center">
+                                        {/* Drag handle */}
+                                        <span
+                                          {...draggableProvided.dragHandleProps}
+                                          onMouseDown={(e) => e.preventDefault()}
+                                          role="button"
+                                          tabIndex={0}
+                                          className="mr-3 p-1 rounded cursor-grab hover:bg-gray-100"
+                                          title="Drag to reorder"
+                                        >
+                                          <Move className="w-5 h-5 text-gray-400" />
+                                        </span>
+
+                                        <img src={course.image} alt={course.title} className="w-12 h-12 rounded-lg object-cover mr-3" />
+                                        <div>
+                                          <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                                          <div className="text-sm text-gray-500">{course.duration}</div>
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-sm text-gray-900">{course.category}</div>
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">{course.level}</span>
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${course.status === "Enrolling Now" ? "bg-green-100 text-green-800" : course.status === "Launching Soon" ? "bg-blue-100 text-blue-800" : course.status === "Under Development" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>
+                                        {course.status}
+                                      </span>
+                                    </td>
+
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.priceText}</td>
+
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                      <button type="button" onClick={() => handleEdit(course)} className="text-blue-600 hover:text-blue-900 mr-4">Edit</button>
+                                      <button type="button" onClick={() => setDeleteConfirm({ type: "course", item: course })} className="text-red-600 hover:text-red-900">Delete</button>
+                                    </td>
+                                  </tr>
+                                )}
+                              </Draggable>
+                            ))}
+
+                            {provided.placeholder}
+                          </tbody>
+                        )}
+                      </Droppable>
+                    </table>
+                  </DragDropContext>
+                </div>
+              </div>
+            )}
           </>
         )}
 
         {/* Featured Programs Tab Content */}
-        {activeTab === 'featured' && (
+        {activeTab === "featured" && (
           <>
             {/* Add Program Button */}
             {!showForm && (
               <div className="mb-8">
-                <button
-                  onClick={() => {
-                    setEditingProgram(null);
-                    setShowForm(true);
-                  }}
-                  className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
+                <button type="button" onClick={() => { setEditingProgram(null); setShowForm(true); }} className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
                   <span className="text-xl">+</span> Add Featured Program
                 </button>
               </div>
@@ -4038,14 +4106,7 @@ const AdminDashboard = ({ onLogout }) => {
             {/* Program Form */}
             {showForm && (
               <div className="mb-8">
-                <FeaturedProgramForm
-                  program={editingProgram}
-                  onSave={handleSaveProgram}
-                  onCancel={() => {
-                    setShowForm(false);
-                    setEditingProgram(null);
-                  }}
-                />
+                <FeaturedProgramForm program={editingProgram} onSave={handleSaveProgram} onCancel={() => { setShowForm(false); setEditingProgram(null); }} />
               </div>
             )}
 
@@ -4054,27 +4115,17 @@ const AdminDashboard = ({ onLogout }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {featuredPrograms.map((program) => (
                   <div key={program.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <img
-                      src={program.image_url}
-                      alt={program.title}
-                      className="w-full h-48 object-cover"
-                    />
+                    <img src={program.image_url} alt={program.title} className="w-full h-48 object-cover" />
                     <div className="p-6">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-lg font-bold text-gray-900">{program.title}</h3>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                          program.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {program.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded ${program.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>{program.is_active ? "Active" : "Inactive"}</span>
                       </div>
-                      
-                      {program.short_description && (
-                        <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>
-                      )}
-                      
+
+                      {program.short_description && <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>}
+
                       <div className="space-y-2 mb-4">
-                        {program.features.slice(0, 3).map((feature, idx) => (
+                        {Array.isArray(program.features) && program.features.slice(0, 3).map((feature, idx) => (
                           <div key={idx} className="flex items-start text-sm text-gray-700">
                             <Check className="w-4 h-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
                             {feature}
@@ -4082,26 +4133,11 @@ const AdminDashboard = ({ onLogout }) => {
                         ))}
                       </div>
 
-                      <div className="text-xs text-gray-500 mb-4">
-                        Display Order: {program.display_order}
-                      </div>
+                      <div className="text-xs text-gray-500 mb-4">Display Order: {program.display_order}</div>
 
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingProgram(program);
-                            setShowForm(true);
-                          }}
-                          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm({ type: 'program', item: program })}
-                          className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
+                        <button type="button" onClick={() => { setEditingProgram(program); setShowForm(true); }} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 text-sm font-medium">Edit</button>
+                        <button type="button" onClick={() => setDeleteConfirm({ type: "program", item: program })} className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 text-sm font-medium">Delete</button>
                       </div>
                     </div>
                   </div>
@@ -4112,54 +4148,19 @@ const AdminDashboard = ({ onLogout }) => {
         )}
 
         {/* Delete Confirmation Modal */}
-        
         <AnimatePresence>
           {deleteConfirm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-              onClick={() => setDeleteConfirm(null)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-2xl p-8 max-w-md w-full"
-                onClick={(e) => e.stopPropagation()}
-              >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setDeleteConfirm(null)}>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-2xl p-8 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
                 <div className="text-center">
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <X className="w-8 h-8 text-red-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Delete {deleteConfirm.type === 'program' ? 'Program' : 'Course'}?
-                  </h3>
-                  <p className="text-gray-800 mb-6">
-                    Are you sure you want to delete "<strong>{deleteConfirm.item.title}</strong>"? This action cannot be undone.
-                  </p>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete {deleteConfirm.type === "program" ? "Program" : "Course"}?</h3>
+                  <p className="text-gray-800 mb-6">Are you sure you want to delete "<strong>{deleteConfirm.item.title}</strong>"? This action cannot be undone.</p>
                   <div className="flex gap-4">
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (deleteConfirm.type === 'program') {
-                          handleDeleteProgram(deleteConfirm.item.id);
-                        } else {
-                          handleDelete(deleteConfirm.item.id);
-                        }
-                      }}
-                      className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors"
-                    >
-                      Delete
-                    </button>
-
-                    
+                    <button type="button" onClick={() => setDeleteConfirm(null)} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="button" onClick={() => { if (deleteConfirm.type === "program") { handleDeleteProgram(deleteConfirm.item.id); } else { handleDelete(deleteConfirm.item.id); } }} className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors">Delete</button>
                   </div>
                 </div>
               </motion.div>
@@ -4170,4 +4171,6 @@ const AdminDashboard = ({ onLogout }) => {
     </div>
   );
 };
+
+
 // ==================== ADMIN COMPONENTS END ====================

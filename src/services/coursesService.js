@@ -7,23 +7,28 @@ import { supabase } from '../config/supabase';
 /* =====================================================
    FETCH ALL COURSES
 ===================================================== */
+// services/courses.js  (or wherever fetchCourses lives)
 export const fetchCourses = async () => {
   try {
+    // First try to order by explicit display_order (ascending).
+    // If display_order is null for some rows, fall back to created_at (desc).
+    // Note: Supabase/Postgres supports multiple .order() calls.
     const { data, error } = await supabase
       .from('courses')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false }) // put nulls last
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    //console.log('✅ Fetched courses:', data.length);
-
+    console.log('✅ Fetched courses:', data.length);
     return data.map(convertToCamelCase);
   } catch (error) {
-    //console.error('❌ Error fetching courses:', error);
+    console.error('❌ Error fetching courses:', error);
     throw error;
   }
 };
+
 
 /* =====================================================
    FETCH COURSE BY ID
@@ -98,7 +103,11 @@ export const createCourse = async (courseData) => {
       projects: courseData.projects,
       tools: courseData.tools,
       outcomes: courseData.outcomes,
-      image: courseData.image
+      image: courseData.image,
+      // Accept both displayOrder (frontend) or display_order (server)
+      display_order: typeof courseData.displayOrder === 'number'
+        ? courseData.displayOrder
+        : (typeof courseData.display_order === 'number' ? courseData.display_order : null),
     };
 
     const { data, error } = await supabase
@@ -143,8 +152,14 @@ export const updateCourse = async (id, courseData) => {
       projects: courseData.projects,
       tools: courseData.tools,
       outcomes: courseData.outcomes,
-      image: courseData.image
+      image: courseData.image,
+      // Persist display_order (map camelCase -> snake_case)
+      display_order: typeof courseData.displayOrder === 'number'
+        ? courseData.displayOrder
+        : (typeof courseData.display_order === 'number' ? courseData.display_order : undefined),
     };
+// remove undefined keys (so we don't overwrite with undefined)
+    Object.keys(dbData).forEach((k) => dbData[k] === undefined && delete dbData[k]);
 
     const { data, error } = await supabase
       .from('courses')
@@ -259,7 +274,8 @@ const convertToCamelCase = (dbCourse) => {
     outcomes: dbCourse.outcomes,
     image: dbCourse.image,
     createdAt: dbCourse.created_at,
-    updatedAt: dbCourse.updated_at
+    updatedAt: dbCourse.updated_at,
+    displayOrder: (typeof dbCourse.display_order !== 'undefined') ? dbCourse.display_order : null
   };
 };
 
