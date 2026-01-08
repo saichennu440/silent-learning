@@ -2,6 +2,8 @@ import React, { useState, useEffect, createContext, useContext, useCallback } fr
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star, Move} from 'lucide-react';
 import CourseDetailPage from './CourseDetailPage.jsx';
+import TermsPage from './terms/TermsPage.jsx';
+import PrivacyPolicy from './terms/PrivacyPolicy.jsx';
 import './App.css';
 
 
@@ -29,8 +31,7 @@ export { useApp };
 // ADMIN PIN - Change this to your desired PIN
 const ADMIN_PIN = 'Salient@123';
 
-//mock data
-//Mock course data from brochure
+//mock data//Mock course data from brochure
 // const mockCourses = [
 //   {
 //     id: 1,
@@ -171,7 +172,7 @@ const ADMIN_PIN = 'Salient@123';
 // Stats from brochure
 const stats = [
   { value: 30, prefix: '', suffix: '%+', label: 'YoY Growth in AI & Data Roles' },
-  { value: 11, prefix: '', suffix: 'M+', label: 'New AI & Data Jobs Globally' },
+  { value: 11, prefix: '', suffix: 'M', label: 'New AI & Data Jobs Globally' },
   { value: 1, prefix: '', suffix: 'T', label: 'AI Market by 2030' },
   { value: 40, prefix: '', suffix: '%', label: 'Higher Salaries for Certified Professionals' }
 ];
@@ -2408,6 +2409,16 @@ const Footer = () => {
                   Contact
                 </button>
               </li>
+               <li>
+                <button onClick={() => navigateTo('terms')} className="hover:text-white transition-colors">
+                  Terms & Conditions
+                </button>
+              </li>
+               <li>
+                <button onClick={() => navigateTo('privacy')} className="hover:text-white transition-colors">
+                  Privacy Policy
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -2807,6 +2818,8 @@ const App = () => {
   // "about",
   "faqs",
   "contact",
+  "terms",
+  "privacy",
   "admin",
   "admin-dashboard"
 ];
@@ -2965,6 +2978,8 @@ const openCourseDetail = (course, selectedDurationIndex = 0) => {
             {/* {currentPage === "about" && <AboutPage key="about" />} */}
             {currentPage === "faqs" && <FAQsPage key="faqs" />}
             {currentPage === "contact" && <ContactPage key="contact" />}
+            {currentPage === "terms" && <TermsPage key="terms" />}
+            {currentPage === "privacy" && <PrivacyPolicy key="privacy" />}
             {currentPage === "admin" && !isAdminAuthenticated && (
               <AdminLogin key="admin-login" onLogin={handleAdminLogin} />
             )}
