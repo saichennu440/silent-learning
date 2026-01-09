@@ -1,11 +1,13 @@
 // CourseDetailPage.jsx
 import React, { useState, useMemo } from 'react';
-import { useApp } from './App'; // adjust path if needed
+import { useApp } from './App';
 import { X, Award, Check } from 'lucide-react';
+import PaymentModal from './components/PaymentModal';
 
 const CourseDetailPage = ({ course }) => {
   const { openEnquiry, navigateTo } = useApp();
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const durations = useMemo(() => {
     if (!course) return [];
@@ -38,12 +40,15 @@ const CourseDetailPage = ({ course }) => {
 
   const current = durations[selectedIdx] || { label: course.duration || '', priceText: course.priceText || '' };
 
+  const handleApplyNow = () => {
+    setPaymentModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-white pt-24 pb-20 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Grid: left = main content, right = sidebar (sticky) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT: Main content (span 2 on large screens) */}
+          {/* LEFT: Main content */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="relative">
               <img src={course.image} alt={course.title} className="w-full h-64 object-cover rounded-t-xl" />
@@ -103,15 +108,11 @@ const CourseDetailPage = ({ course }) => {
               {/* Curriculum */}
               <div className="mb-8">
                 <h3 className="text-xl font-bold mb-4 text-gray-900">Curriculum</h3>
-
-                {/* Make modules flow nicely. Each module stays a block; within topics we use columns on md+ */}
                 <div className="space-y-6">
                   {Array.isArray(course.curriculum) && course.curriculum.length > 0 ? (
                     course.curriculum.map((module, index) => (
                       <div key={index} className="border-l-4 border-blue-600 pl-4">
                         <h4 className="font-semibold text-gray-900 mb-2">{module.title}</h4>
-
-                        {/* topics split into two columns on md+ to reduce vertical length */}
                         <ul className="text-gray-800 list-none columns-1 md:columns-2 gap-4">
                           {Array.isArray(module.topics) && module.topics.length > 0 ? (
                             module.topics.map((topic, idx) => (
@@ -189,7 +190,7 @@ const CourseDetailPage = ({ course }) => {
             </div>
           </div>
 
-          {/* RIGHT: Sidebar (summary) */}
+          {/* RIGHT: Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-28 space-y-6">
               <div className="bg-white rounded-xl shadow p-6 border">
@@ -212,7 +213,6 @@ const CourseDetailPage = ({ course }) => {
                   </div>
                 </div>
 
-                {/* Brochure link (if present) */}
                 {course.brochure_url && (
                   <a
                     href={course.brochure_url}
@@ -225,7 +225,7 @@ const CourseDetailPage = ({ course }) => {
                 )}
 
                 <button
-                  onClick={() => openEnquiry(course)}
+                  onClick={() => setPaymentModalOpen(true)} // Changed from openEnquiry
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700"
                 >
                   Apply Now
@@ -239,7 +239,6 @@ const CourseDetailPage = ({ course }) => {
                 </button>
               </div>
 
-              {/* small card with short description or highlights */}
               <div className="bg-white rounded-xl shadow p-4 border">
                 <h4 className="font-semibold text-gray-900 mb-2">Quick Highlights</h4>
                 <p className="text-sm text-gray-700">{course.shortDescription || course.subtitle || '—'}</p>
@@ -248,6 +247,14 @@ const CourseDetailPage = ({ course }) => {
           </aside>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        course={course}
+        selectedDuration={current}
+      />
     </div>
   );
 };
