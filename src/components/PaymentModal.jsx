@@ -127,21 +127,32 @@ const PaymentModal = ({ isOpen, onClose, course }) => {
         udf2: paymentType, // Custom field for payment type
       };
 
-      // Initiate payment with Easebuzz
-      const response = await initiateEasebuzzPayment(paymentData);
+const response = await initiateEasebuzzPayment(paymentData);
 
-      if (response.status === 1 && response.data) {
-        // Redirect to Easebuzz payment page
-        window.location.href = response.data;
-      } else {
-        throw new Error(response.error || 'Payment initiation failed');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('Payment initiation failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  // 🚀 Submit form to Easebuzz
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = response.action;
+
+  Object.entries(response).forEach(([key, value]) => {
+    if (key === "action") return;
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+
+} catch (error) {
+  console.error("Payment error:", error);
+  alert("Payment initiation failed. Please try again.");
+} finally {
+  setLoading(false);
+}
+
   };
 
   return (
