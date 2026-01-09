@@ -1,1 +1,1 @@
-{"root":["./src/app.jsx","./src/coursedetailpage.jsx","./src/main.jsx","./src/config/supabase.js","./src/services/coursesservice.js"],"version":"5.9.3"}
+{"root":["./src/app.jsx","./src/coursedetailpage.jsx","./src/main.jsx","./src/components/paymentmodal.jsx","./src/config/supabase.js","./src/pages/paymentfailure.jsx","./src/pages/paymentsuccess.jsx","./src/services/coursesservice.js","./src/services/paymentservice.js","./src/terms/privacypolicy.jsx","./src/terms/termspage.jsx"],"version":"5.9.3"}
