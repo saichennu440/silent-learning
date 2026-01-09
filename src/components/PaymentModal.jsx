@@ -113,38 +113,66 @@ const PaymentModal = ({ isOpen, onClose, course }) => {
 
       await savePaymentRecord(paymentRecord);
 
-      // Prepare payment data for Easebuzz
-      const paymentData = {
-        txnid: transactionId,
-        amount: amount.toString(),
-        productinfo: course.title,
-        firstname: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        surl: `${window.location.origin}/payment-success`, // Success URL
-        furl: `${window.location.origin}/payment-failure`, // Failure URL
-        udf1: course.id, // Custom field for course ID
-        udf2: paymentType, // Custom field for payment type
-      };
+// sanitize productinfo and format amount
+const sanitizeProductInfo = (s) =>
+  String(s || '').replace(/[^a-zA-Z0-9\s\-]/g, '').trim().slice(0, 100);
 
+const productinfo = sanitizeProductInfo(course.title);
+const paymentData = {
+  txnid: transactionId,
+  amount: Number(amount).toFixed(2), // e.g. "5000.00"
+  productinfo,
+  firstname: formData.name,
+  phone: formData.phone,
+  email: formData.email,
+  surl: `${window.location.origin}/payment-success`,
+  furl: `${window.location.origin}/payment-failure`,
+  udf1: String(course.id || ""),
+  udf2: String(paymentType || ""),
+};
+
+// call edge function which calls Easebuzz initiateLink and returns {status, data}
 const response = await initiateEasebuzzPayment(paymentData);
 
-  // 🚀 Submit form to Easebuzz
+// 1) If Edge returned access key (preferred)
+if (response && (response.status === 1 || response.status === "1") && response.data) {
+  const easebuzzBase = (import.meta.env.VITE_EASEBUZZ_ENV === "prod")
+    ? "https://pay.easebuzz.in"
+    : "https://testpay.easebuzz.in";
+
+  // redirect user to hosted checkout
+  window.location.href = `${easebuzzBase}/pay/${response.data}`;
+  return;
+}
+
+// 2) Fallback: if Edge returns action+fields (older flow), POST form to action
+if (response && response.action && response.key && response.hash) {
   const form = document.createElement("form");
   form.method = "POST";
   form.action = response.action;
 
-  Object.entries(response).forEach(([key, value]) => {
-    if (key === "action") return;
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = key;
-    input.value = value;
-    form.appendChild(input);
+  // only include allowed fields (avoid any unexpected objects)
+  const allowed = ['key','txnid','amount','productinfo','firstname','email','phone','surl','furl','udf1','udf2','udf3','udf4','udf5','hash'];
+  allowed.forEach(k => {
+    if (response[k] !== undefined && response[k] !== null) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = k;
+      input.value = String(response[k]);
+      form.appendChild(input);
+    }
   });
 
   document.body.appendChild(form);
   form.submit();
+  return;
+}
+
+// If we reach here, show the returned error (if any)
+if (response && response.error_desc) {
+  throw new Error(response.error_desc || "Payment initiation failed");
+}
+throw new Error("Unexpected response from payment server");
 
 } catch (error) {
   console.error("Payment error:", error);
@@ -153,7 +181,7 @@ const response = await initiateEasebuzzPayment(paymentData);
   setLoading(false);
 }
 
-  };
+};
 
   return (
     <AnimatePresence>

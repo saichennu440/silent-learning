@@ -4,29 +4,27 @@ const EDGE_BASE_URL = import.meta.env.VITE_SUPABASE_EDGE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const initiateEasebuzzPayment = async (paymentData) => {
-  const response = await fetch(
-    `${EDGE_BASE_URL}/easebuzz-initiate`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${ANON_KEY}`,
-        "apikey": ANON_KEY,
-      },
-      body: JSON.stringify(paymentData),
-    }
-  );
+  const res = await fetch(`${EDGE_BASE_URL}/easebuzz-initiate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${ANON_KEY}`,
+      "apikey": ANON_KEY,
+    },
+    body: JSON.stringify(paymentData),
+  });
 
-  const text = await response.text();
+  const text = await res.text();
+  if (!text) throw new Error("Empty response from Edge Function");
 
-  if (!text) {
-    throw new Error("Empty response from Edge Function");
+  // return parsed object; do NOT throw for status===0 here so UI can show error_desc
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("Invalid JSON from Edge Function: " + err.message + " — raw: " + text);
   }
-
-  // ✅ DO NOT validate status
-  // ✅ DO NOT throw here
-  return JSON.parse(text);
 };
+
 
 
 
