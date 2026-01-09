@@ -1,3 +1,5 @@
+import { supabase } from '../config/supabase';
+
 const EDGE_BASE_URL = import.meta.env.VITE_SUPABASE_EDGE_URL;
 
 export const initiateEasebuzzPayment = async (paymentData) => {
