@@ -133,48 +133,25 @@ const paymentData = {
 
 // call edge function which calls Easebuzz initiateLink and returns {status, data}
 const response = await initiateEasebuzzPayment(paymentData);
-console.log("EASEBUZZ EDGE RESPONSE 👉", response);
-return; // ⛔ STOP HERE (important)
 
-// 1) If Edge returned access key (preferred)
-if (response && (response.status === 1 || response.status === "1") && response.data) {
-  const easebuzzBase = (import.meta.env.VITE_EASEBUZZ_ENV === "prod")
-    ? "https://pay.easebuzz.in"
-    : "https://testpay.easebuzz.in";
+console.log("EASEBUZZ RESPONSE:", response);
 
-  // redirect user to hosted checkout
-  window.location.href = `${easebuzzBase}/pay/${response.data}`;
-  return;
+if (response && response.status === 1 && response.data) {
+  const accessKey = response.data;
+
+  const EASEBUZZ_BASE =
+    import.meta.env.VITE_EASEBUZZ_ENV === "prod"
+      ? "https://pay.easebuzz.in"
+      : "https://testpay.easebuzz.in";
+
+  // 🚀 THIS IS THE REDIRECT (MANDATORY)
+  window.location.href = `${EASEBUZZ_BASE}/pay/${accessKey}`;
+  return; // stop further execution
 }
 
-// 2) Fallback: if Edge returns action+fields (older flow), POST form to action
-if (response && response.action && response.key && response.hash) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = response.action;
+// If Easebuzz returns error
+throw new Error(response?.error_desc || "Easebuzz initiation failed");
 
-  // only include allowed fields (avoid any unexpected objects)
-  const allowed = ['key','txnid','amount','productinfo','firstname','email','phone','surl','furl','udf1','udf2','udf3','udf4','udf5','hash'];
-  allowed.forEach(k => {
-    if (response[k] !== undefined && response[k] !== null) {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = k;
-      input.value = String(response[k]);
-      form.appendChild(input);
-    }
-  });
-
-  document.body.appendChild(form);
- 
-  return;
-}
-
-// If we reach here, show the returned error (if any)
-if (response && response.error_desc) {
-  throw new Error(response.error_desc || "Payment initiation failed");
-}
-throw new Error("Unexpected response from payment server");
 
 } catch (error) {
   console.error("Payment error:", error);
