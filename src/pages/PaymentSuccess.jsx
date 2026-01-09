@@ -1,4 +1,4 @@
-import React from "react";
+import {react, useEffect} from "react";
 // PaymentSuccess.jsx
 const PaymentSuccess = () => {
   useEffect(() => {
