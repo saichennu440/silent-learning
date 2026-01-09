@@ -125,8 +125,8 @@ const paymentData = {
   firstname: formData.name,
   phone: formData.phone,
   email: formData.email,
-  surl: `${window.location.origin}/payment-success`,
-  furl: `${window.location.origin}/payment-failure`,
+  surl: "https://klvoknkxgszgsuuqblds.functions.supabase.co/easebuzz-success",
+  furl: "https://klvoknkxgszgsuuqblds.functions.supabase.co/easebuzz-failure",
   udf1: String(course.id || ""),
   udf2: String(paymentType || ""),
 };

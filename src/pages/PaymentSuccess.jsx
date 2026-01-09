@@ -1,3 +1,4 @@
+import React from "react";
 // PaymentSuccess.jsx
 const PaymentSuccess = () => {
   useEffect(() => {
@@ -31,23 +32,4 @@ const PaymentSuccess = () => {
   );
 };
 
-// PaymentFailure.jsx
-const PaymentFailure = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <X className="w-8 h-8 text-red-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Failed</h2>
-        <p className="text-gray-600 mb-6">Something went wrong. Please try again.</p>
-        <button
-          onClick={() => window.location.href = '/courses'}
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700"
-        >
-          Back to Courses
-        </button>
-      </div>
-    </div>
-  );
-};
+export default PaymentSuccess;
