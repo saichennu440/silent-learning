@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase';
 
 const EDGE_BASE_URL = import.meta.env.VITE_SUPABASE_EDGE_URL;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const initiateEasebuzzPayment = async (paymentData) => {
   const response = await fetch(
@@ -9,6 +10,8 @@ export const initiateEasebuzzPayment = async (paymentData) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${ANON_KEY}`,
+        "apikey": ANON_KEY,
       },
       body: JSON.stringify(paymentData),
     }
@@ -16,13 +19,24 @@ export const initiateEasebuzzPayment = async (paymentData) => {
 
   const text = await response.text();
 
-  // IMPORTANT: avoid JSON crash
   if (!text) {
     throw new Error("Empty response from Edge Function");
   }
 
-  return JSON.parse(text);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Invalid JSON response from Edge Function");
+  }
+
+  if (!response.ok || data.status === 0) {
+    throw new Error(data.error || "Payment initiation failed");
+  }
+
+  return data;
 };
+
 
 
 /**
