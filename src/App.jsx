@@ -4,6 +4,8 @@ import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Brie
 import CourseDetailPage from './CourseDetailPage.jsx';
 import TermsPage from './terms/TermsPage.jsx';
 import PrivacyPolicy from './terms/PrivacyPolicy.jsx';
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailure from "./pages/PaymentFailure";
 import './App.css';
 
 
@@ -2820,6 +2822,8 @@ const App = () => {
   "contact",
   "terms",
   "privacy",
+  "payment-success",
+  "payment-failure",
   "admin",
   "admin-dashboard"
 ];
@@ -2980,6 +2984,14 @@ const openCourseDetail = (course, selectedDurationIndex = 0) => {
             {currentPage === "contact" && <ContactPage key="contact" />}
             {currentPage === "terms" && <TermsPage key="terms" />}
             {currentPage === "privacy" && <PrivacyPolicy key="privacy" />}
+            {currentPage === "payment-success" && (
+              <PaymentSuccess key="payment-success" />
+            )}
+
+            {currentPage === "payment-failure" && (
+              <PaymentFailure key="payment-failure" />
+            )}
+
             {currentPage === "admin" && !isAdminAuthenticated && (
               <AdminLogin key="admin-login" onLogin={handleAdminLogin} />
             )}
