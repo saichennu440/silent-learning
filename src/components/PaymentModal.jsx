@@ -133,6 +133,8 @@ const paymentData = {
 
 // call edge function which calls Easebuzz initiateLink and returns {status, data}
 const response = await initiateEasebuzzPayment(paymentData);
+console.log("EASEBUZZ EDGE RESPONSE 👉", response);
+return; // ⛔ STOP HERE (important)
 
 // 1) If Edge returned access key (preferred)
 if (response && (response.status === 1 || response.status === "1") && response.data) {
@@ -164,7 +166,7 @@ if (response && response.action && response.key && response.hash) {
   });
 
   document.body.appendChild(form);
-  form.submit();
+ 
   return;
 }
 
