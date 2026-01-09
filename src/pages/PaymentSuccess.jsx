@@ -1,4 +1,7 @@
-import {react, useEffect} from "react";
+import {Check} from "lucide-react";
+import {updatePaymentStatus} from "../services/paymentService";
+import React from "react";
+import {useEffect} from "react";
 // PaymentSuccess.jsx
 const PaymentSuccess = () => {
   useEffect(() => {
