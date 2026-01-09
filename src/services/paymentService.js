@@ -23,19 +23,11 @@ export const initiateEasebuzzPayment = async (paymentData) => {
     throw new Error("Empty response from Edge Function");
   }
 
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error("Invalid JSON response from Edge Function");
-  }
-
-  if (!response.ok || data.status === 0) {
-    throw new Error(data.error || "Payment initiation failed");
-  }
-
-  return data;
+  // ✅ DO NOT validate status
+  // ✅ DO NOT throw here
+  return JSON.parse(text);
 };
+
 
 
 
