@@ -24,7 +24,7 @@ const PaymentFailure = () => {
       </p>
       <button
           onClick={() => window.location.href = '/'}
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700"
+          className="bg-blue-600 text-white px-8 py-3 mt-4 rounded-lg font-semibold hover:bg-blue-700"
         >
           Go to Home
         </button>

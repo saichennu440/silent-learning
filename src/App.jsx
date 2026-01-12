@@ -3095,6 +3095,12 @@ const AdminLogin = ({ onLogin }) => {
 
 // Course Form Component (for Add/Edit)
 const CourseForm = ({ course, onSave, onCancel }) => {
+
+  // inside component, add new state
+const [uploading, setUploading] = useState(false);
+const [selectedFileName, setSelectedFileName] = useState('');
+const [uploadError, setUploadError] = useState('');
+
   const [formData, setFormData] = useState(
     course || {
       title: '',
@@ -3132,7 +3138,7 @@ const CourseForm = ({ course, onSave, onCancel }) => {
     'Planned',
   ];
 
-  // keep durations in sync to legacy single fields before save
+// keep durations in sync to legacy single fields before save
 const normalizeBeforeSave = (data) => {
   const copy = { ...data };
 
@@ -3149,19 +3155,26 @@ const normalizeBeforeSave = (data) => {
 };
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      // normalize for compatibility and send to parent save
-      const payload = normalizeBeforeSave(formData);
-      await onSave(payload);
-    } catch (error) {
-      //console.error('Error saving course:', error);
-    } finally {
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setSaving(true);
+  try {
+    // If image is a blob preview (object URL) and not uploaded yet, warn or upload
+    if (formData.image && formData.image.startsWith('blob:')) {
+      // Optionally: prompt user or block save until upload finishes
+      alert('Please wait until image finishes uploading.');
       setSaving(false);
+      return;
     }
-  };
+
+    const payload = normalizeBeforeSave(formData);
+    await onSave(payload);
+  } catch (error) {
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // Curriculum helpers (unchanged)
   const addCurriculumModule = () => {
@@ -3242,6 +3255,71 @@ const normalizeBeforeSave = (data) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  // Upload file to Supabase Storage and return accessible URL
+const uploadImageToSupabase = async (file) => {
+  if (!file) return null;
+  setUploadError('');
+  setUploading(true);
+  try {
+    // create a safe unique path
+    const ext = file.name.split('.').pop();
+    const filePath = `courses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+    // Upload - bucket name = 'course-images' (create this in Supabase)
+    const { data: uploadData, error: uploadErr } = await supabase
+      .storage
+      .from('course-images')
+      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+    if (uploadErr) throw uploadErr;
+
+    // Try to get public URL (handles both v1/v2 return shapes)
+    let publicUrl = null;
+    try {
+      const getRes = await supabase.storage.from('course-images').getPublicUrl(filePath);
+      // v2: getRes.data.publicUrl, v1: getRes.publicURL
+      publicUrl = getRes?.data?.publicUrl || getRes?.publicURL || getRes?.data?.publicURL;
+    } catch (e) {
+      // ignore and try signed url next
+    }
+
+    // If bucket is private, create a signed URL valid for 1 hour
+    if (!publicUrl) {
+      const { data: signedData, error: signedErr } = await supabase
+        .storage
+        .from('course-images')
+        .createSignedUrl(filePath, 60 * 60); // 1 hour
+      if (signedErr) throw signedErr;
+      publicUrl = signedData?.signedURL || signedData?.signedUrl;
+    }
+
+    // update formData.image to the URL so it will be saved with the course
+    setFormData((prev) => ({ ...prev, image: publicUrl }));
+
+    // keep filename display
+    setSelectedFileName(file.name);
+
+    return publicUrl;
+  } catch (err) {
+    console.error('Upload error', err);
+    setUploadError(err?.message || 'Upload failed');
+    return null;
+  } finally {
+    setUploading(false);
+  }
+};
+
+// handle file input change - upload immediately on selection
+const handleFileChange = async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  // optimistic preview using object URL while waiting for public URL
+  const previewUrl = URL.createObjectURL(file);
+  setFormData((prev) => ({ ...prev, image: previewUrl }));
+  await uploadImageToSupabase(file);
+};
+
 
   return (
     <motion.div
@@ -3372,15 +3450,57 @@ const normalizeBeforeSave = (data) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Course Image
+        </label>
+
+        {/* Preview */}
+        <div className="mb-3">
+          {formData.image ? (
+            <img
+              src={formData.image}
+              alt="Preview"
+              className="w-48 h-28 object-cover rounded-md border"
+            />
+          ) : (
+            <div className="w-48 h-28 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500 border">
+              No image
+            </div>
+          )}
+        </div>
+
+        {/* File input */}
+        <div className="flex items-center gap-3">
+          <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border rounded-md text-sm shadow-sm hover:bg-gray-50">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <span className="text-blue-600">Upload from device</span>
+          </label>
+
+          {/* Optional: keep ability to paste external URL */}
           <input
             type="url"
             value={formData.image}
             onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-            placeholder="https://example.com/image.jpg"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            placeholder="Or paste external image URL (optional)"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
           />
         </div>
+
+        {/* status */}
+        <div className="mt-2 text-sm">
+          {uploading && <span className="text-gray-600">Uploading…</span>}
+          {selectedFileName && !uploading && (
+            <span className="text-green-600">Uploaded: {selectedFileName}</span>
+          )}
+          {uploadError && <span className="text-red-600">Error: {uploadError}</span>}
+        </div>
+        </div>
+
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3593,54 +3713,112 @@ const normalizeBeforeSave = (data) => {
 // FeaturedProgramForm.jsx
 const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    short_description: '',
-    image_url: '',
-    features: ['', '', ''],
-    brochure_url: '',
+    title: "",
+    short_description: "",
+    image_url: "",
+    features: ["", "", ""],
+    brochure_url: "",
     display_order: 0,
     is_active: true,
-    ...program
+    ...program,
   });
+
+  // Upload states
+  const [uploading, setUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleFeatureChange = (index, value) => {
     const newFeatures = [...formData.features];
     newFeatures[index] = value;
-    setFormData(prev => ({ ...prev, features: newFeatures }));
+    setFormData((prev) => ({ ...prev, features: newFeatures }));
   };
 
   const addFeature = () => {
-    setFormData(prev => ({
-      ...prev,
-      features: [...prev.features, '']
-    }));
+    setFormData((prev) => ({ ...prev, features: [...prev.features, ""] }));
   };
 
   const removeFeature = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      features: prev.features.filter((_, i) => i !== index)
+      features: prev.features.filter((_, i) => i !== index),
     }));
   };
 
+  // ----------------- Upload helpers -----------------
+  const uploadImageToSupabase = async (file) => {
+    if (!file) return null;
+    setUploadError("");
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `featured-programs/${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from("course-images") // change bucket name if you want a different bucket
+        .upload(filePath, file, { cacheControl: "3600", upsert: false });
+
+      if (uploadErr) throw uploadErr;
+
+      // try to get public url
+      let publicUrl = null;
+      try {
+        const getRes = await supabase.storage.from("course-images").getPublicUrl(filePath);
+        publicUrl = getRes?.data?.publicUrl || getRes?.publicURL || getRes?.data?.publicURL;
+      } catch (e) {
+        // ignore
+      }
+
+      if (!publicUrl) {
+        const { data: signedData, error: signedErr } = await supabase.storage
+          .from("course-images")
+          .createSignedUrl(filePath, 60 * 60); // 1 hour
+        if (signedErr) throw signedErr;
+        publicUrl = signedData?.signedURL || signedData?.signedUrl;
+      }
+
+      setFormData((prev) => ({ ...prev, image_url: publicUrl }));
+      setSelectedFileName(file.name);
+      return publicUrl;
+    } catch (err) {
+      console.error("Upload error", err);
+      setUploadError(err?.message || "Upload failed");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    // optimistic preview while uploading
+    const previewUrl = URL.createObjectURL(file);
+    setFormData((prev) => ({ ...prev, image_url: previewUrl }));
+    await uploadImageToSupabase(file);
+  };
+  // ---------------------------------------------------
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const filteredFeatures = formData.features.filter(f => f.trim() !== '');
+    const filteredFeatures = formData.features.filter((f) => f.trim() !== "");
     onSave({ ...formData, features: filteredFeatures });
   };
 
   return (
     <div className="bg-white rounded-xl shadow-md p-8">
       <h2 className="text-2xl font-bold text-blue-900 mb-6">
-        {program ? 'Edit Featured Program' : 'Add Featured Program'}
+        {program ? "Edit Featured Program" : "Add Featured Program"}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -3673,25 +3851,60 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
           />
         </div>
 
+        {/* Image upload block */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Image URL *
+            Program Image *
           </label>
-          <input
-            type="url"
-            name="image_url"
-            required
-            value={formData.image_url}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            placeholder="https://images.unsplash.com/..."
-          />
+
+          <div className="mb-3">
+            {formData.image_url ? (
+              <img
+                src={formData.image_url}
+                alt="Preview"
+                className="w-48 h-28 object-cover rounded-md border"
+              />
+            ) : (
+              <div className="w-48 h-28 bg-gray-100 rounded-md flex items-center justify-center text-sm text-gray-500 border">
+                No image
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border rounded-md text-sm shadow-sm hover:bg-gray-50">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <span className="text-blue-600">Upload from device</span>
+            </label>
+
+            <input
+              type="url"
+              name="image_url"
+              required
+              value={formData.image_url}
+              onChange={handleChange}
+              placeholder="Or paste external image URL (optional)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <div className="mt-2 text-sm">
+            {uploading && <span className="text-gray-600">Uploading…</span>}
+            {selectedFileName && !uploading && (
+              <span className="text-green-600">Uploaded: {selectedFileName}</span>
+            )}
+            {uploadError && <span className="text-red-600">Error: {uploadError}</span>}
+          </div>
         </div>
 
+        {/* Features list */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Features *
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Features *</label>
           {formData.features.map((feature, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
@@ -3776,7 +3989,7 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
             type="submit"
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700"
           >
-            {program ? 'Update Program' : 'Add Program'}
+            {program ? "Update Program" : "Add Program"}
           </button>
         </div>
       </form>
