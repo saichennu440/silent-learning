@@ -1,11 +1,12 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star, Move} from 'lucide-react';
+import { Menu, X, ChevronDown, Check, Mail, Phone, MapPin, BookOpen, Users, Briefcase, TrendingUp, Award, Star, Move, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import CourseDetailPage from './CourseDetailPage.jsx';
 import TermsPage from './terms/TermsPage.jsx';
 import PrivacyPolicy from './terms/PrivacyPolicy.jsx';
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailure from "./pages/PaymentFailure";
+import RefundPolicy from './terms/RefundPolicy.jsx';
 import './App.css';
 
 
@@ -17,6 +18,7 @@ import {
   deleteCourse as deleteCourseDB 
 } from './services/coursesService';
 import {supabase, testConnection } from './config/supabase';
+
 
 
 const AppContext = createContext(null);
@@ -173,8 +175,8 @@ const ADMIN_PIN = 'Salient@123';
 
 // Stats from brochure
 const stats = [
-  { value: 30, prefix: '', suffix: '%+', label: 'YoY Growth in AI & Data Roles' },
-  { value: 11, prefix: '', suffix: 'M', label: 'New AI & Data Jobs Globally' },
+  { value: 30, prefix: '', suffix: '%', label: 'YoY Growth in AI & Data Roles' },
+  { value: 11, prefix: '', suffix: 'M+', label: 'New AI & Data Jobs Globally' },
   { value: 1, prefix: '', suffix: 'T', label: 'AI Market by 2030' },
   { value: 40, prefix: '', suffix: '%', label: 'Higher Salaries for Certified Professionals' }
 ];
@@ -434,7 +436,19 @@ const Header = () => {
                   </button>
                 );
               })}
-
+ {/* optional "View all courses" link */}
+                            <div className="mt-2 border-t pt-2">
+                              <button
+                                onClick={() => {
+                                  navigateTo('courses');
+                                  setIsOpen(false);
+                                  setCoursesOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:underline"
+                              >
+                                View all courses
+                              </button>
+                            </div>
               <button
                 onClick={() => {
                   openEnquiry();
@@ -1545,11 +1559,11 @@ const FAQsPage = () => {
       questions: [
         {
           q: 'Who can enroll in these programs?',
-          a: 'Our programs are designed for aspiring data scientists, working professionals looking to upskill, fresh graduates, and anyone interested in AI and data science. No prior coding experience is required for beginner courses.'
+          a: 'Our programs are designed for college students, working professionals looking to upskill, fresh graduates, and anyone interested.'
         },
         {
           q: 'Do I need prior coding knowledge?',
-          a: 'For our Crash Course and Certificate programs, no prior coding knowledge is required. We start from basics. For advanced programs, some programming familiarity is helpful but not mandatory.'
+          a: 'No prior coding knowledge is required. We start from basics. For advanced programs, some programming familiarity is helpful but not mandatory.'
         },
         {
           q: 'Are these programs beginner-friendly?',
@@ -1564,10 +1578,7 @@ const FAQsPage = () => {
           q: 'Are classes online or hybrid?',
           a: 'All our programs are delivered online with live, instructor-led sessions. This allows flexibility while maintaining high engagement through real-time interaction.'
         },
-        {
-          q: 'What is the time commitment?',
-          a: 'Time commitment varies by program: Crash Course (2 months), Certificate (4 months), Diploma (7 months). Typically 10-15 hours per week including classes, assignments, and projects.'
-        },
+        
         {
           q: 'What is the mentorship model?',
           a: 'You get direct access to industry practitioners who guide you through concepts, projects, and career development. Mentors provide personalized feedback and support throughout your journey.'
@@ -1579,16 +1590,13 @@ const FAQsPage = () => {
       questions: [
         {
           q: 'Do you provide placement assistance?',
-          a: 'Yes! We offer structured career support including resume building, interview preparation, mock interviews, and access to our hiring network of partner companies.'
+          a: 'Yes! We offer structured career support including resume building, interview preparation, mock interviews, and access to our verified positions.'
         },
         {
           q: 'What type of certificate will I receive?',
-          a: 'Depending on your program: Course Completion Certificate (Crash Course), Professional Certification (Certificate Program), or Dual Certification with Internship Letter (Diploma Program).'
+          a: 'Course Completion Certificate (Dual Certification) from Salient Learnings.'
         },
-        {
-          q: 'What are the career outcomes?',
-          a: 'Our graduates transition into roles like Data Analyst, Business Analyst, ML Engineer, Data Scientist, and AI Engineer. Certified professionals typically see 20-40% salary increases.'
-        }
+      
       ]
     },
     {
@@ -1600,7 +1608,7 @@ const FAQsPage = () => {
         },
         {
           q: 'What is your refund policy?',
-          a: 'We offer a satisfaction guarantee. If you\'re not satisfied within the first two weeks, you can request a full refund. Contact our support team for details.'
+          a: 'We offer a satisfaction guarantee. Please refer to our refund policy.'
         }
       ]
     }
@@ -2287,11 +2295,11 @@ const HomePage = () => {
 
                 {/* Author Info */}
                 <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-                  <img
+                  {/* <img
                     src={testimonial.image}
                     alt={testimonial.name}
                     className="w-12 h-12 rounded-full object-cover"
-                  />
+                  /> */}
                   <div>
                     <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
                     <p className="text-sm text-gray-600">{testimonial.role}</p>
@@ -2421,30 +2429,86 @@ const Footer = () => {
                   Privacy Policy
                 </button>
               </li>
+               <li>
+                <button onClick={() => navigateTo('refund-policy')} className="hover:text-white transition-colors">
+                   Refund Policy
+                </button>
+              </li>
             </ul>
           </div>
 
-          <div>
-            <h4 className="font-semibold mb-4">Contact</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center">
-                <Phone className="w-4 h-4 mr-2" />
-                <a href="tel:+919966357297" className="hover:text-white transition-colors">
-                  +91-7386527858
-                </a>
-              </li>
-              <li className="flex items-center">
-                <Mail className="w-4 h-4 mr-2" />
-                <a href="mailto:info@salientlearnings.com" className="hover:text-white transition-colors">
-                  info@salientlearnings.com
-                </a>
-              </li>
-              <li className="flex items-start">
-                <MapPin className="w-4 h-4 mr-2 mt-1" />
-                <span>KPHB, Hyderabad</span>
-              </li>
-            </ul>
-          </div>
+         <div>
+  <h4 className="font-semibold mb-4">Contact</h4>
+
+  <ul className="space-y-2 text-gray-400 mb-4">
+    <li className="flex items-center">
+      <Phone className="w-4 h-4 mr-2" />
+      <a href="tel:+917386527858" className="hover:text-white transition-colors">
+        +91-7386527858
+      </a>
+    </li>
+
+    <li className="flex items-center">
+      <Mail className="w-4 h-4 mr-2" />
+      <a
+        href="mailto:info@salientlearnings.com"
+        className="hover:text-white transition-colors"
+      >
+        info@salientlearnings.com
+      </a>
+    </li>
+
+    <li className="flex items-start">
+      <MapPin className="w-4 h-4 mr-2 mt-1" />
+      <span>KPHB, Hyderabad</span>
+    </li>
+  </ul>
+
+  {/* ✅ Social Media Icons */}
+  <div className="flex items-center gap-6 mt-6">
+    <a
+      href="https://www.facebook.com/salientlearnings/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-400 hover:text-blue-500 transition-colors"
+      aria-label="Facebook"
+    >
+      <Facebook className="w-5 h-5" />
+    </a>
+
+    <a
+      href="https://www.instagram.com/salient.learnings/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-400 hover:text-pink-500 transition-colors"
+      aria-label="Instagram"
+    >
+      <Instagram className="w-5 h-5" />
+    </a>
+
+    {/* X (Twitter) – custom text icon */}
+    <a
+      href="https://x.com/SalientLearning"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-400 hover:text-white font-bold text-lg transition-colors"
+      aria-label="X (Twitter)"
+    >
+      <Twitter className="w-5 h-5" />
+    </a>
+
+    <a
+      href="https://www.linkedin.com/company/salient-learnings/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-400 hover:text-blue-400 transition-colors"
+      aria-label="LinkedIn"
+    >
+      <Linkedin className="w-5 h-5" />
+    </a>
+  </div>
+</div>
+
         </div>
 
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
@@ -2597,36 +2661,44 @@ const App = () => {
   };
 
   // Navigation helper - create the navigation function
-  const createNavigateTo = useCallback(
-    (routeOrPath) => {
-      if (!routeOrPath) return;
+ const createNavigateTo = useCallback(
+  (routeOrPath) => {
+    if (!routeOrPath) return;
 
-      let route = routeOrPath.startsWith("/")
-        ? routeOrPath.slice(1)
-        : routeOrPath;
+    let route = routeOrPath.startsWith("/")
+      ? routeOrPath.slice(1)
+      : routeOrPath;
 
-      if (route === "" || route === "/") route = "home";
+    if (route === "" || route === "/") route = "home";
 
-      if (!validPages.includes(route)) {
-        route = "home";
-      }
+    if (!validPages.includes(route)) {
+      route = "home";
+    }
 
-      if (route === "admin" && isAdminAuthenticated) {
-        createNavigateTo("admin-dashboard");
-        window.history.pushState({}, "", "/admin-dashboard");
-        return;
-      }
+    if (route === "admin" && isAdminAuthenticated) {
+      createNavigateTo("admin-dashboard");
+      window.history.pushState({}, "", "/admin-dashboard");
+      return;
+    }
 
-      setCurrentPage(route);
+    setCurrentPage(route);
 
-      window.history.pushState(
-        {},
-        "",
-        route === "home" ? "/" : `/${route}`
-      );
-    },
-    [isAdminAuthenticated]
-  );
+    window.history.pushState(
+      {},
+      "",
+      route === "home" ? "/" : `/${route}`
+    );
+
+    // ✅ SCROLL TO TOP (smooth)
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  },
+  [isAdminAuthenticated]
+);
+
 
   // Add course (tries DB -> falls back to local)
   const addCourse = async (course) => {
@@ -2822,6 +2894,7 @@ const App = () => {
   "contact",
   "terms",
   "privacy",
+  "refund-policy",
   "payment-success",
   "payment-failure",
   "admin",
@@ -2939,7 +3012,9 @@ const openCourseDetail = (course, selectedDurationIndex = 0) => {
 
 
   return (
+    
     <AppContext.Provider value={contextValue}>
+    
       <div className="min-h-screen bg-white">
         {/* Loading state */}
         {(loading || featuredLoading) && (
@@ -2984,6 +3059,7 @@ const openCourseDetail = (course, selectedDurationIndex = 0) => {
             {currentPage === "contact" && <ContactPage key="contact" />}
             {currentPage === "terms" && <TermsPage key="terms" />}
             {currentPage === "privacy" && <PrivacyPolicy key="privacy" />}
+            {currentPage === "refund-policy" && <RefundPolicy key="refund-policy" />}
             {currentPage === "payment-success" && (
               <PaymentSuccess key="payment-success" />
             )}
@@ -3728,6 +3804,12 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [uploadError, setUploadError] = useState("");
 
+  // upload states for brochure
+    const [brochureUploading, setBrochureUploading] = useState(false);
+    const [brochureFileName, setBrochureFileName] = useState('');
+    const [brochureUploadError, setBrochureUploadError] = useState('');
+
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -3814,6 +3896,64 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
     const filteredFeatures = formData.features.filter((f) => f.trim() !== "");
     onSave({ ...formData, features: filteredFeatures });
   };
+
+  const uploadBrochureToSupabase = async (file) => {
+  if (!file) return null;
+  setBrochureUploadError('');
+  setBrochureUploading(true);
+  try {
+    const ext = file.name.split('.').pop();
+    // bucket path for brochures
+    const filePath = `brochures/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+    // Use bucket 'course-assets' (create this in Supabase), or reuse 'course-images' if you prefer
+    const BUCKET_NAME = 'course-assets'; // <-- change if you want another bucket
+
+    const { data: uploadData, error: uploadErr } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+    if (uploadErr) throw uploadErr;
+
+    // Try to get public URL
+    let publicUrl = null;
+    try {
+      const getRes = await supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+      publicUrl = getRes?.data?.publicUrl || getRes?.publicURL || getRes?.data?.publicURL;
+    } catch (e) {
+      // ignore
+    }
+
+    // If bucket is private, create a signed URL
+    if (!publicUrl) {
+      const { data: signedData, error: signedErr } = await supabase.storage
+        .from(BUCKET_NAME)
+        .createSignedUrl(filePath, 60 * 60); // 1 hour
+      if (signedErr) throw signedErr;
+      publicUrl = signedData?.signedURL || signedData?.signedUrl;
+    }
+
+    // Save final URL into formData.brochure_url
+    setFormData(prev => ({ ...prev, brochure_url: publicUrl }));
+    setBrochureFileName(file.name);
+    return publicUrl;
+  } catch (err) {
+    console.error('Brochure upload error', err);
+    setBrochureUploadError(err?.message || 'Upload failed');
+    return null;
+  } finally {
+    setBrochureUploading(false);
+  }
+};
+
+const handleBrochureChange = async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  // set a user-friendly placeholder while uploading
+  setFormData(prev => ({ ...prev, brochure_url: '' }));
+  await uploadBrochureToSupabase(file);
+};
+
 
   return (
     <div className="bg-white rounded-xl shadow-md p-8">
@@ -3934,19 +4074,61 @@ const FeaturedProgramForm = ({ program, onSave, onCancel }) => {
           </button>
         </div>
 
+        {/* Brochure upload block */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Brochure PDF URL
+            Brochure PDF *
           </label>
-          <input
-            type="text"
-            name="brochure_url"
-            value={formData.brochure_url}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
-            placeholder="/DSAI_Generic_Brochure.pdf"
-          />
+
+          <div className="mb-3">
+            {formData.brochure_url ? (
+              <div className="text-sm text-gray-700">
+                Current brochure:
+                <a
+                  href={formData.brochure_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-2 text-blue-600 underline"
+                >
+                  {brochureFileName || 'View Brochure'}
+                </a>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">No brochure uploaded</div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border rounded-md text-sm shadow-sm hover:bg-gray-50">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleBrochureChange}
+                className="hidden"
+              />
+              <span className="text-blue-600">Upload brochure (PDF)</span>
+            </label>
+
+            {/* Optional: keep ability to paste external URL as fallback */}
+            <input
+              type="text"
+              name="brochure_url"
+              value={formData.brochure_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, brochure_url: e.target.value }))}
+              placeholder="Or paste external brochure URL (optional)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          <div className="mt-2 text-sm">
+            {brochureUploading && <span className="text-gray-600">Uploading brochure…</span>}
+            {brochureFileName && !brochureUploading && (
+              <span className="text-green-600">Uploaded: {brochureFileName}</span>
+            )}
+            {brochureUploadError && <span className="text-red-600">Error: {brochureUploadError}</span>}
+          </div>
         </div>
+
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
