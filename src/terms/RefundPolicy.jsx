@@ -7,7 +7,7 @@ const RefundPolicy = () => {
       <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">Terms &amp; Conditions</h1>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">Refund Policy</h1>
             <p className="text-sm text-gray-500">Last updated: January 13, 2026</p>
           </div>
           <div>

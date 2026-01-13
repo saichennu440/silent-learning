@@ -254,7 +254,7 @@ const Header = () => {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center py-4 ">
           <motion.div
             className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
             whileHover={{ scale: 1.05 }}
@@ -269,7 +269,7 @@ const Header = () => {
           </motion.div>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-8 ">
             {navItems.map((item) => {
               if (item.page === 'courses') {
                 return (
@@ -281,7 +281,7 @@ const Header = () => {
                   >
                     <button
                       onClick={() => navigateTo('courses')}
-                      className={`text-sm font-medium transition-colors ${
+                      className={`cursor-pointer text-sm font-medium transition-colors  ${
                         currentPage === item.page
                           ? 'text-blue-600'
                           : 'text-gray-700 hover:text-blue-600'
@@ -300,14 +300,14 @@ const Header = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute left-0 mt-3 w-80 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50"
+                          className="absolute left-0 mt-3 w-80 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-50 "
                         >
-                          <div className="p-3 max-h-72 overflow-y-auto">
+                          <div className="p-3 max-h-72 overflow-y-auto ">
                             {courses.slice(0, 8).map((course) => (
                               <button
                                 key={course.id}
                                 onClick={() => handleCourseClick(course)}
-                                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex flex-col"
+                                className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 flex flex-col cursor-pointer"
                               >
                                 <span className="font-semibold text-gray-800 text-sm">
                                   {course.title}
@@ -325,7 +325,7 @@ const Header = () => {
                                   navigateTo('courses');
                                   setCoursesOpen(false);
                                 }}
-                                className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:underline"
+                                className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:underline cursor-pointer"
                               >
                                 View all courses
                               </button>
@@ -346,7 +346,7 @@ const Header = () => {
                     navigateTo(item.page);
                     setCoursesOpen(false);
                   }}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`cursor-pointer text-sm font-medium transition-colors ${
                     currentPage === item.page
                       ? 'text-blue-600'
                       : 'text-gray-700 hover:text-blue-600'
@@ -361,7 +361,7 @@ const Header = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => openEnquiry()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
             >
               Speak to an Advisor
             </motion.button>
@@ -521,7 +521,7 @@ const Hero = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigateTo('courses')}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg cursor-pointer"
             >
               Explore Programs
             </motion.button>
@@ -529,7 +529,7 @@ const Hero = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => openEnquiry()}
-              className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors cursor-pointer"
             >
               Speak to an Advisor
             </motion.button>
@@ -740,7 +740,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
               // pass selected duration index as second arg (backwards-compatible)
               if (typeof onLearnMore === 'function') onLearnMore(course, selectedIdx);
             }}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
           >
             Learn More
           </button>
@@ -748,7 +748,7 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
             onClick={() => {
               if (typeof onEnquiry === 'function') onEnquiry(course, selectedIdx);
             }}
-            className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+            className="flex-1 border-2 border-blue-600 text-blue-600 py-2 px-4 rounded-lg font-medium hover:bg-blue-50 transition-colors cursor-pointer"
           >
             Enquiry
           </button>
@@ -1874,7 +1874,7 @@ const ContactPage = () => {
               </p>
               <button
                 onClick={() => window.open("https://wa.me/917386527858", "_blank")}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors w-full cursor-pointer"
               >
                 Open whatsapp Enquiry
               </button>
@@ -2029,7 +2029,7 @@ const ContactPage = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-3 px-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  className="w-full py-3 px-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
                 >
                   Submit Enquiry
                 </button>
@@ -2140,7 +2140,7 @@ const HomePage = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleDownloadClick(program.brochure_url)}
-                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm cursor-pointer"
                   >
                     Download Curriculum
                   </motion.button>
@@ -2320,7 +2320,7 @@ const HomePage = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => openEnquiry()}
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg"
+              className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg cursor-pointer"
             >
               Start Your Journey Today
             </motion.button>
@@ -2333,13 +2333,28 @@ const HomePage = () => {
 
 // Footer Component
 const Footer = () => {
-  const { navigateTo, courses, setSelectedCourseDetail } = useApp();
+   const [isOpen, setIsOpen] = useState(false);
+  const [coursesOpen, setCoursesOpen] = useState(false); // desktop hover state
+  const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false); // mobile sublist
+  const [scrolled, setScrolled] = useState(false);
+  const { currentPage, navigateTo, openEnquiry, courses, openCourseDetail} = useApp();
 
-  const handleCourseClick = (course) => {
-    // open courses page and show course detail modal
-    if (setSelectedCourseDetail) setSelectedCourseDetail(course);
-    navigateTo('courses');
-    // small scroll for UX
+   const handleCourseClick = (course) => {
+    // Open the course detail page (routes to /coursedetail/:slugOrId)
+    if (!course) {
+      // fallback: go to courses listing
+      navigateTo('courses');
+      window.history.pushState({}, '', '/courses');
+    } else {
+      openCourseDetail(course);
+    }
+
+    // close menus
+    setIsOpen(false);
+    setMobileCoursesOpen(false);
+    setCoursesOpen(false);
+
+    // scroll to top for UX if needed
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
@@ -2349,7 +2364,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <img
-              className="w-28 h-18 object-contain mr-2 inline-block"
+              className="cursor-pointer w-28 h-18 object-contain mr-2 inline-block"
+              onClick={() => navigateTo('home')}
               src="./logo.png"
               alt="Salient Learnings Logo"
             />
@@ -2360,77 +2376,52 @@ const Footer = () => {
 
           <div>
             <h4 className="font-semibold mb-4">Courses</h4>
-            <ul className="space-y-2 text-gray-400 max-h-40 overflow-y-auto pr-2">
-              {courses && courses.length > 0 ? (
-                courses.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      onClick={() => handleCourseClick(c)}
-                      className="hover:text-white transition-colors text-left w-full truncate"
-                      title={c.title}
+            <ul className="space-y-2 text-gray-400 max-h-40 overflow-y-auto pr-2 ">
+              {courses.slice(0, 8).map((course) => (
+                              <button
+                                key={course.id}
+                      onClick={() => handleCourseClick(course)}
+                      className="hover:text-white transition-colors text-left w-full truncate cursor-pointer"
+                      title={course.title}
                     >
-                      {c.title}
+                      {course.title}
                     </button>
-                  </li>
-                ))
-              ) : (
-                // fallback items if courses not loaded yet
-                <>
-                  <li>
-                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
-                      Data Science & AI
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
-                      Generative AI
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
-                      Industry AI
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => navigateTo('courses')} className="hover:text-white transition-colors">
-                      DeepTech
-                    </button>
-                  </li>
-                </>
-              )}
+                  
+                ))}
+              
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-gray-400">
+            <ul className="space-y-2 text-gray-400 ">
               <li>
                 {/* <button onClick={() => navigateTo('about')} className="hover:text-white transition-colors">
                   About Us
                 </button> */}
               </li>
               <li>
-                <button onClick={() => navigateTo('faqs')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('faqs')} className="hover:text-white transition-colors cursor-pointer">
                   FAQs
                 </button>
               </li>
               <li>
-                <button onClick={() => navigateTo('contact')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('contact')} className="hover:text-white transition-colors cursor-pointer">
                   Contact
                 </button>
               </li>
                <li>
-                <button onClick={() => navigateTo('terms')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('terms')} className="hover:text-white transition-colors cursor-pointer">
                   Terms & Conditions
                 </button>
               </li>
                <li>
-                <button onClick={() => navigateTo('privacy')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('privacy')} className="hover:text-white transition-colors cursor-pointer">
                   Privacy Policy
                 </button>
               </li>
                <li>
-                <button onClick={() => navigateTo('refund-policy')} className="hover:text-white transition-colors">
+                <button onClick={() => navigateTo('refund-policy')} className="hover:text-white transition-colors cursor-pointer">
                    Refund Policy
                 </button>
               </li>
