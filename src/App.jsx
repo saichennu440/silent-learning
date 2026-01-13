@@ -2050,10 +2050,223 @@ const ContactPage = () => {
 };
 
 // HomePage.jsx - Update Featured Programs Section
+// ---------------------------
+
+// ---------------------------
+// FeaturedEnquiryModal (NEW)
+// ---------------------------
+const FeaturedEnquiryModal = ({ isOpen, onClose, selectedCourse = null, brochureUrl = null }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    program: selectedCourse?.title || '',
+    message: '',
+    contactMethod: 'Whatsapp',
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [phoneWarning, setPhoneWarning] = useState('');
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setFormData(prev => ({ ...prev, program: selectedCourse.title }));
+    }
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitted(false);
+      setPhoneWarning('');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        whatsapp: '',
+        program: selectedCourse?.title || '',
+        message: '',
+        contactMethod: 'Whatsapp',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const digitsOnly = (v) => (v || '').replace(/\D+/g, '');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'phone' || name === 'whatsapp') {
+      const hasLetters = /[A-Za-z]/.test(value);
+      if (hasLetters) setPhoneWarning('Only numbers allowed. Letters were removed automatically.');
+      const cleaned = digitsOnly(value);
+      setFormData(prev => ({ ...prev, [name]: cleaned }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const triggerDownload = (url) => {
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!/^[0-9]{6,}$/.test(formData.phone)) {
+      setPhoneWarning('Please enter a valid phone number (digits only, min 6).');
+      return;
+    }
+
+    if (!/^[0-9]{6,}$/.test(formData.whatsapp)) {
+      setPhoneWarning('Please enter a valid Whatsapp number (digits only, min 6).');
+      return;
+    }
+
+    try {
+      const payload = { ...formData, source: 'featured-program-download' };
+      const res = await fetch('https://formspree.io/f/mzdpzzql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+
+        // trigger download of the brochure for this specific program
+        if (brochureUrl) {
+          // small timeout to allow user to see success message
+          setTimeout(() => {
+            triggerDownload(brochureUrl);
+          }, 300);
+        }
+
+        // close modal after a short delay and reset
+        setTimeout(() => {
+          setSubmitted(false);
+          onClose();
+          setFormData({ name: '', email: '', phone: '', whatsapp: '', program: selectedCourse?.title || '', message: '', contactMethod: 'Whatsapp' });
+          setPhoneWarning('');
+        }, 1600);
+      } else {
+        // keep UX silent, optionally handle errors here
+      }
+    } catch (err) {
+      // handle network error optionally
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white rounded-2xl max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {submitted && (
+          <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-lg text-center font-medium">
+            ✅ Enquiry submitted — your brochure download will begin shortly.
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mb-2 px-8 pt-6">
+          <h3 className="text-2xl font-bold text-gray-900">Get Curriculum - {selectedCourse?.title}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 overflow-y-auto px-8 pb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+            <input name="name" required value={formData.name} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" placeholder="Your name" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+            <input name="email" type="email" required value={formData.email} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" placeholder="your@email.com" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+            <input name="phone" type="tel" required value={formData.phone} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" placeholder="Digits only" />
+            {phoneWarning && <p className="mt-1 text-sm text-yellow-700">{phoneWarning}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Whatsapp *</label>
+            <input name="whatsapp" type="tel" required value={formData.whatsapp} onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600" placeholder="Digits only" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Course Interested In *</label>
+            {/* Hidden input to include program value in submit, and a readonly display so user cannot change it */}
+            <input type="hidden" name="program" value={formData.program} />
+            <input
+              type="text"
+              readOnly
+              value={formData.program || (selectedCourse?.title || '')}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 mt-1">This field is pre-selected based on the program you chose.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Contact Method</label>
+            <div className="flex gap-4 items-center mt-1">
+              <label className="flex items-center"><input type="radio" name="contactMethod" value="Whatsapp" checked={formData.contactMethod === 'Whatsapp'} onChange={handleChange} className="mr-2" />Whatsapp</label>
+              <label className="flex items-center"><input type="radio" name="contactMethod" value="phone" checked={formData.contactMethod === 'phone'} onChange={handleChange} className="mr-2" />Phone Call</label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea name="message" value={formData.message} onChange={handleChange} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 resize-none" placeholder="Tell us about your goals..." />
+          </div>
+
+          <button type="submit" disabled={submitted} className={`w-full py-3 rounded-lg font-semibold ${submitted ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+            {submitted ? 'Submitting...' : 'Submit & Download Brochure'}
+          </button>
+
+          <p className="text-xs text-gray-500 text-center">Or email us at <a href="mailto:info@salientlearnings.com" className="text-blue-600">info@salientlearnings.com</a></p>
+        </form>
+
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ---------------------------
+// HomePage (modified)
+// ---------------------------
 const HomePage = () => {
   const { openEnquiry, featuredPrograms } = useApp();
-
   const BROCHURE_URL = '/DSAI_Generic_Brochure.pdf';
+
+  // Local state to open the NEW featured modal (keeps your existing openEnquiry usage intact)
+  const [featuredModalCourse, setFeaturedModalCourse] = useState(null);
+  const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
 
   const triggerDownload = (url) => {
     const a = document.createElement('a');
@@ -2064,12 +2277,14 @@ const HomePage = () => {
     a.remove();
   };
 
-  const handleDownloadClick = (brochureUrl) => {
-    const downloadUrl = brochureUrl || BROCHURE_URL;
-    sessionStorage.setItem('pendingDownloadUrl', downloadUrl);
-    openEnquiry({ downloadRequest: true });
+  // When user clicks "Download Curriculum" inside featured programs we open the NEW modal.
+  const handleFeaturedDownloadClick = (program) => {
+    // program is the featured program object; pass it to the specialized modal
+    setFeaturedModalCourse(program);
+    setIsFeaturedModalOpen(true);
   };
 
+  // existing listener (keeps intact if you still use the old enquiry modal elsewhere)
   useEffect(() => {
     const onSubmitSuccess = () => {
       const pending = sessionStorage.getItem('pendingDownloadUrl');
@@ -2084,50 +2299,24 @@ const HomePage = () => {
 
   return (
     <div>
-      <Hero />
+     <Hero />
       <WhySalient />
-      
-      {/* Featured Programs Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
-              Featured Programs
-            </h2>
-            <p className="text-xl text-gray-800">
-              Our comprehensive certification programs
-            </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">Featured Programs</h2>
+            <p className="text-xl text-gray-800">Our comprehensive certification programs</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredPrograms.map((program, index) => (
-              <motion.div
-                key={program.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col"
-              >
+              <motion.div key={program.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col">
                 <div className="relative h-48">
-                  <img
-                    src={program.image_url}
-                    alt={program.title}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={program.image_url} alt={program.title} className="w-full h-full object-cover" />
                 </div>
                 <div className="p-6 flex-grow flex flex-col">
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">
-                    {program.title}
-                  </h3>
-                  {program.short_description && (
-                    <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>
-                  )}
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">{program.title}</h3>
+                  {program.short_description && <p className="text-sm text-gray-600 mb-3">{program.short_description}</p>}
                   <ul className="space-y-2 mb-4 flex-grow">
                     {program.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start text-sm text-gray-800">
@@ -2136,12 +2325,9 @@ const HomePage = () => {
                       </li>
                     ))}
                   </ul>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleDownloadClick(program.brochure_url)}
-                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm cursor-pointer"
-                  >
+
+                  {/* opens the NEW FeaturedEnquiryModal with this program preselected */}
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => handleFeaturedDownloadClick(program)} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full text-sm cursor-pointer">
                     Download Curriculum
                   </motion.button>
                 </div>
@@ -2150,9 +2336,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-
-      {/* Learning Experience Section */}
+          {/* Learning Experience Section */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -2327,9 +2511,20 @@ const HomePage = () => {
           </motion.div>
         </div>
       </section>
+      <FeaturedEnquiryModal
+        isOpen={isFeaturedModalOpen}
+        onClose={() => setIsFeaturedModalOpen(false)}
+        selectedCourse={featuredModalCourse}
+        brochureUrl={featuredModalCourse?.brochure_url || BROCHURE_URL}
+      />
     </div>
   );
 };
+
+
+
+
+
 
 // Footer Component
 const Footer = () => {
