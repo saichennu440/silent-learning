@@ -263,7 +263,7 @@ const Header = () => {
           >
             <img
               className="w-42 h-24 object-contain mr-2 inline-block"
-              src="/logo.png"
+              src="/logo_Blue.png"
               alt="VOC Academy Logo"
             />
           </motion.div>
