@@ -254,7 +254,7 @@ const Header = () => {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4 ">
+        <div className="flex justify-between items-center py-0 ">
           <motion.div
             className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent cursor-pointer"
             whileHover={{ scale: 1.05 }}
@@ -262,9 +262,9 @@ const Header = () => {
 
           >
             <img
-              className="w-28 h-24 object-contain mr-2 inline-block"
+              className="w-42 h-24 object-contain mr-2 inline-block"
               src="/logo.png"
-              alt="Salient Learnings Logo"
+              alt="VOC Academy Logo"
             />
           </motion.div>
 
@@ -489,7 +489,7 @@ const Hero = () => {
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: 0.2, duration: 0.8 }}
 >
-  Salient Learnings
+  VOC Academy
 </motion.h1>
 
           
@@ -603,7 +603,7 @@ const WhySalient = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
-            Why Salient Learnings
+            Why VOC Academy
           </h2>
           <p className="text-xl text-gray-800 max-w-3xl mx-auto">
             Your ideal learning partner for AI and data science excellence
@@ -1331,8 +1331,8 @@ const EnquiryModal = ({ isOpen, onClose, selectedCourse = null }) => {
 
           <p className="text-xs text-gray-500 text-center">
             Or email us directly at{' '}
-            <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
-              info@salientlearnings.com
+            <a href="mailto:connect@vocacademics.com" className="text-blue-600 hover:underline">
+              connect@vocacademics.com
             </a>
           </p>
         </form>
@@ -1496,9 +1496,9 @@ const filteredCourses = sortedCourses.filter(course => {
 //           animate={{ opacity: 1, y: 0 }}
 //           className="mb-12"
 //         >
-//           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-blue-900">About Salient Learnings</h1>
+//           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-blue-900">About VOC Academy</h1>
 //           <p className="text-xl text-gray-800 leading-relaxed">
-//             Salient Learnings is a future-focused education platform dedicated to building industry-ready talent in AI, Data Science, Generative AI & Deep Technologies through mentor-led, hands-on learning.
+//             VOC Academy is a future-focused education platform dedicated to building industry-ready talent in AI, Data Science, Generative AI & Deep Technologies through mentor-led, hands-on learning.
 //           </p>
 //         </motion.div>
 
@@ -1594,7 +1594,7 @@ const FAQsPage = () => {
         },
         {
           q: 'What type of certificate will I receive?',
-          a: 'Course Completion Certificate (Dual Certification) from Salient Learnings.'
+          a: 'Course Completion Certificate (Dual Certification) from VOC Academy.'
         },
       
       ]
@@ -1848,10 +1848,10 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
                   <a
-                    href="mailto:info@salientlearnings.com"
+                    href="mailto:connect@vocacademics.com"
                     className="text-blue-600 hover:underline"
                   >
-                    info@salientlearnings.com
+                    connect@vocacademics.com
                   </a>
                 </div>
               </div>
@@ -2036,8 +2036,8 @@ const ContactPage = () => {
 
                 <p className="text-xs text-gray-500 text-center">
                   Or email us directly at{' '}
-                  <a href="mailto:info@salientlearnings.com" className="text-blue-600 hover:underline">
-                    info@salientlearnings.com
+                  <a href="mailto:connect@vocacademics.com" className="text-blue-600 hover:underline">
+                    connect@vocacademics.com
                   </a>
                 </p>
               </form>
@@ -2249,7 +2249,7 @@ const FeaturedEnquiryModal = ({ isOpen, onClose, selectedCourse = null, brochure
             {submitted ? 'Submitting...' : 'Submit & Download Brochure'}
           </button>
 
-          <p className="text-xs text-gray-500 text-center">Or email us at <a href="mailto:info@salientlearnings.com" className="text-blue-600">info@salientlearnings.com</a></p>
+          <p className="text-xs text-gray-500 text-center">Or email us at <a href="mailto:connect@vocacademics.com" className="text-blue-600">connect@vocacademics.com</a></p>
         </form>
 
       </motion.div>
@@ -2346,7 +2346,7 @@ const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-blue-900">
-              The Salient Learning Experience
+              The VOC Academy Experience
             </h2>
             <p className="text-xl text-gray-800 max-w-3xl mx-auto">
               Maximizing engagement through personalized guidance and practical application
@@ -2418,7 +2418,7 @@ const HomePage = () => {
                 name: 'Priya Sharma',
                 role: 'Data Scientist at TCS',
                 image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&auto=format&fit=crop',
-                testimonial: 'The Data Science program at Salient Learnings was transformative. The hands-on projects and mentor support helped me land my dream job within 3 months of completion.',
+                testimonial: 'The Data Science program at VOC Academy was transformative. The hands-on projects and mentor support helped me land my dream job within 3 months of completion.',
                 rating: 5
               },
               {
@@ -2453,7 +2453,7 @@ const HomePage = () => {
                 name: 'Arjun Mehta',
                 role: 'DevOps Engineer at Tech Mahindra',
                 image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop',
-                testimonial: 'Outstanding DevOps training! The hands-on labs and real-world scenarios prepared me well for my current role. Highly recommend Salient Learnings!',
+                testimonial: 'Outstanding DevOps training! The hands-on labs and real-world scenarios prepared me well for my current role. Highly recommend VOC Academy!',
                 rating: 5
               }
             ].map((testimonial, index) => (
@@ -2559,10 +2559,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <img
-              className="cursor-pointer w-28 h-18 object-contain mr-2 inline-block"
+              className="cursor-pointer w-42 h-18 object-contain mr-2 inline-block"
               onClick={() => navigateTo('home')}
-              src="./logo.png"
-              alt="Salient Learnings Logo"
+              src="./logo_white.png"
+              alt="VOC Academy Logo"
             />
             <p className="text-gray-400">
               Building future-ready talent in AI, <br></br>Data & Deep Technologies
@@ -2637,10 +2637,10 @@ const Footer = () => {
     <li className="flex items-center">
       <Mail className="w-4 h-4 mr-2" />
       <a
-        href="mailto:info@salientlearnings.com"
+        href="mailto:connect@vocacademics.com"
         className="hover:text-white transition-colors"
       >
-        info@salientlearnings.com
+        connect@vocacademics.com
       </a>
     </li>
 
@@ -2653,7 +2653,7 @@ const Footer = () => {
   {/* ✅ Social Media Icons */}
   <div className="flex items-center gap-6 mt-6">
     <a
-      href="https://www.facebook.com/salientlearnings/"
+      href="https://www.facebook.com/profile.php?id=61592503280955"
       target="_blank"
       rel="noopener noreferrer"
       className="text-gray-400 hover:text-blue-500 transition-colors"
@@ -2663,7 +2663,7 @@ const Footer = () => {
     </a>
 
     <a
-      href="https://www.instagram.com/salient.learnings/"
+      href="https://www.instagram.com/voc.academy/"
       target="_blank"
       rel="noopener noreferrer"
       className="text-gray-400 hover:text-pink-500 transition-colors"
@@ -2673,32 +2673,32 @@ const Footer = () => {
     </a>
 
     {/* X (Twitter) – custom text icon */}
-    <a
-      href="https://x.com/SalientLearning"
+    {/* <a
+      href="https://x.com/voc_academy"
       target="_blank"
       rel="noopener noreferrer"
       className="text-gray-400 hover:text-white font-bold text-lg transition-colors"
       aria-label="X (Twitter)"
     >
       <Twitter className="w-5 h-5" />
-    </a>
+    </a> */}
 
-    <a
-      href="https://www.linkedin.com/company/salient-learnings/"
+    {/* <a
+      href="https://www.linkedin.com/company/voc-academy/"
       target="_blank"
       rel="noopener noreferrer"
       className="text-gray-400 hover:text-blue-400 transition-colors"
       aria-label="LinkedIn"
     >
       <Linkedin className="w-5 h-5" />
-    </a>
+    </a> */}
   </div>
 </div>
 
         </div>
 
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Salient Learnings. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} VOC Academy. All rights reserved.</p>
         </div>
       </div>
     </footer>

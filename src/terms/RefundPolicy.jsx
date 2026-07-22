@@ -21,25 +21,82 @@ const RefundPolicy = () => {
           </div>
         </div>
 
-        <section className="prose prose-sm sm:prose lg:prose-lg text-gray-800">
-            <h2>Refund Policy</h2>
-         <p>   Salient Learnings appreciates and values your purchase on our website (https://www.salientlearnings.com/). We take our refund policy seriously and make sure go through it carefully. All defined terms used below shall have the meanings set forth in our Terms and Conditions. Check https://www.salientlearnings.com/terms-and-conditions/ </p>
+ <section className="prose prose-sm sm:prose lg:prose-lg text-gray-800">
+  <h2>Refund Policy</h2>
 
-<p>Salient Learnings (hereby referred as ‘Salient Learnings’), reserves the sole right to repeal or reschedule a training or change the trainer, because of insufficient enrollments, trainer / instructor unavailability or force majeure conditions.</p>
-<strong>Refund policy in case training is cancelled by Salient Learnings:</strong>
-<p>In case Salient Learnings cancels an event, 100% of course fees will be refunded to the delegate if the refund raise request is within 10 days of purchase of the course.</p>
-<strong>If the delegate opts for cancellation/refund:</strong>
-<p>Delegates should raise the request for refund within 3 business days after attending the first session (classroom/Instructor led online). A formal request for a refund should be made through an official email to info@salientlearnings.com from the date of the course commencement. Any refund request after the above time frame will not be entertained.</p>
+  <p>
+    VOC Academy appreciates and values your purchase on our website (
+    https://www.vocacademics.com/). We take our refund policy seriously
+    and request that you read it carefully. All defined terms used below
+    shall have the meanings set forth in our Terms and Conditions. Please
+    refer to https://www.vocacademics.com/terms-and-conditions/.
+  </p>
 
-<p>No refunds under any circumstances will be entertained if the delegate/participants attends 8 hours of the session</p>
+  <p>
+    VOC Academy (hereby referred to as <strong>"VOC Academy"</strong>)
+    reserves the sole right to cancel, postpone, or reschedule a training
+    program or change the trainer due to insufficient enrollments,
+    trainer/instructor unavailability, or force majeure conditions.
+  </p>
 
-<p>If the delegate/participant doesn’t attend even a single live session the refund request should be raised within 10 days from the day of the payment. Any request after the above time frame will not be entertained.</p>
-<p>•	All the refunds will be processed within 10-20 business working days after the request for a refund has been raised and approved by Salient Learnings after Deducting respective taxes.</p>
-<p>•	Any duplicate payment made will be refunded only after the request is raised by the delegate with payment proof. Such refunds are processed within 7 days from the day of intimation done by the delegate.</p>
-<p>•	If the participant/Delegate has accessed any e-learning course or has attended Online Classrooms/received recordings then the refund request will not be entertained.</p>
-<strong>If you have any other queries regarding our refund and rescheduling policy, drop us a mail at info@salientlearnings.com</strong>
+  <strong>
+    Refund Policy in Case Training is Cancelled by VOC Academy
+  </strong>
 
-        </section>
+  <p>
+    In case VOC Academy cancels an event, 100% of the course fee will be
+    refunded to the delegate, provided the refund request is raised within
+    10 days of purchasing the course.
+  </p>
+
+  <strong>If the Delegate Opts for Cancellation/Refund</strong>
+
+  <p>
+    Delegates should raise the refund request within 3 business days after
+    attending the first session (Classroom/Instructor-Led Online). A formal
+    refund request must be sent via official email to{" "}
+    <strong>connect@vocacademics.com</strong> from the course commencement
+    date. Refund requests received after this period will not be entertained.
+  </p>
+
+  <p>
+    No refund will be entertained under any circumstances if the
+    delegate/participant has attended 8 hours or more of the training
+    session.
+  </p>
+
+  <p>
+    If the delegate/participant has not attended even a single live session,
+    the refund request must be raised within 10 days from the date of
+    payment. Requests received after this period will not be entertained.
+  </p>
+
+  <ul>
+    <li>
+      All approved refunds will be processed within <strong>10–20 business
+      working days</strong> after deducting applicable taxes.
+    </li>
+
+    <li>
+      Any duplicate payment will be refunded only after the delegate raises
+      a request along with valid payment proof. Such refunds are generally
+      processed within <strong>7 business days</strong> from the date of
+      intimation.
+    </li>
+
+    <li>
+      If the participant/delegate has accessed any e-learning course,
+      attended online classroom sessions, or received course recordings,
+      the refund request will not be entertained.
+    </li>
+  </ul>
+
+  <p>
+    If you have any questions regarding our refund or rescheduling policy,
+    please email us at{" "}
+    <strong>connect@vocacademics.com</strong>.
+  </p>
+</section>
         </div>
       </div>
   );
