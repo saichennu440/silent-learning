@@ -213,7 +213,7 @@ throw new Error(response?.error_desc || "Easebuzz initiation failed");
                   >
                     <Wallet className={`w-6 h-6 mx-auto mb-2 ${paymentType === 'full' ? 'text-blue-600' : 'text-gray-400'}`} />
                     <div className="font-semibold text-gray-900">Full Payment</div>
-                    <div className="text-xl font-bold text-blue-600 mt-1">₹{fullAmount.toLocaleString()}</div>
+                    {/* <div className="text-xl font-bold text-blue-600 mt-1">₹{fullAmount.toLocaleString()}</div> */}
                   </button>
 
                   <button
@@ -336,10 +336,12 @@ throw new Error(response?.error_desc || "Easebuzz initiation failed");
                     <span>Payment Type:</span>
                     <span className="font-medium capitalize">{paymentType}</span>
                   </div>
-                  <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between text-lg font-bold text-blue-900">
+
+                  {/* price disabled */}
+                  {/* <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between text-lg font-bold text-blue-900">
                     <span>Total Amount:</span>
                     <span>₹{(paymentType === 'full' ? fullAmount : parseFloat(partialAmount || 0)).toLocaleString()}</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

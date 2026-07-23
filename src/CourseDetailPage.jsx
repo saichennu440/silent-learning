@@ -97,7 +97,8 @@ const CourseDetailPage = ({ course }) => {
                 )}
 
                 <span>•</span>
-                <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
+                 {/* price disabled */}
+                {/* <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span> */}
               </div>
 
               <div className="mb-8">
@@ -198,7 +199,8 @@ const CourseDetailPage = ({ course }) => {
                 <div className="text-lg font-semibold mb-3">{current.label || '—'}</div>
 
                 <div className="text-sm text-gray-500">Price</div>
-                <div className="text-2xl font-bold text-blue-600 mb-4">₹{current.priceText || '—'}</div>
+                                  {/* price disabled */}
+                {/* <div className="text-2xl font-bold text-blue-600 mb-4">₹{current.priceText || '—'}</div> */}
 
                 <div className="flex items-center justify-between mb-4">
                   <div>
