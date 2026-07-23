@@ -729,9 +729,9 @@ const CourseCard = ({ course, onLearnMore, onEnquiry }) => {
             <span>{current.label || '—'}</span>
           )}
 
-          <span>•</span>
+          {/* <span>•</span> */}
 
-          <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span>
+          {/* <span className="text-xl font-semibold text-blue-600">₹{current.priceText || '—'}</span> */}
         </div>
 
         <div className="flex gap-3">
